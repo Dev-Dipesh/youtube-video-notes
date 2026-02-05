@@ -185,6 +185,18 @@
       color: #606060;
     }
 
+    body.dark-mode .stat-value {
+      color: #f1f1f1;
+    }
+
+    body.dark-mode .stat-item svg {
+      fill: #aaaaaa;
+    }
+
+    body.dark-mode .stat-label {
+      color: #aaaaaa;
+    }
+
     .notes-grid {
       display: grid;
       gap: 24px;
@@ -396,6 +408,47 @@
       gap: 16px;
     }
 
+    .modal-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .modal-actions select {
+      padding: 8px 12px;
+      border-radius: 6px;
+      border: 1px solid #e5e5e5;
+      background: #f1f1f1;
+      color: #0f0f0f;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+    }
+
+    body.dark-mode .modal-actions select {
+      background: #272727;
+      border-color: #303030;
+      color: #f1f1f1;
+    }
+
+    .modal-editor {
+      width: 100%;
+      min-height: 300px;
+      border: 1px solid #e5e5e5;
+      border-radius: 8px;
+      padding: 12px 14px;
+      font-family: 'Courier New', monospace;
+      font-size: 14px;
+      background: #f9f9f9;
+      color: #0f0f0f;
+    }
+
+    body.dark-mode .modal-editor {
+      background: #1f1f1f;
+      border-color: #303030;
+      color: #f1f1f1;
+    }
+
     .modal-title {
       font-size: 24px;
       font-weight: 600;
@@ -436,6 +489,10 @@
       width: 20px;
       height: 20px;
       fill: #0f0f0f;
+    }
+
+    body.dark-mode .modal-close svg {
+      fill: #f1f1f1;
     }
 
     .modal-body {
@@ -492,6 +549,34 @@
       margin: 16px 0;
       color: #606060;
       font-style: italic;
+    }
+
+    .modal-body table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 16px 0;
+      font-size: 14px;
+    }
+
+    .modal-body th,
+    .modal-body td {
+      border: 1px solid #e5e5e5;
+      padding: 8px 10px;
+      text-align: left;
+    }
+
+    .modal-body th {
+      background: #f5f5f5;
+      font-weight: 600;
+    }
+
+    body.dark-mode .modal-body th,
+    body.dark-mode .modal-body td {
+      border-color: #303030;
+    }
+
+    body.dark-mode .modal-body th {
+      background: #272727;
     }
 
     @media (max-width: 768px) {
@@ -573,15 +658,25 @@
     <div class="modal-content">
       <div class="modal-header">
         <h2 class="modal-title" id="modal-title">Note Title</h2>
-        <button class="modal-close" onclick="closeModal()">
-          <svg viewBox="0 0 24 24">
-            <path d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z"/>
-          </svg>
-        </button>
+        <div class="modal-actions">
+          <select id="modal-depth-select" aria-label="Note depth">
+            <option value="brief">Brief</option>
+            <option value="detailed">Detailed</option>
+          </select>
+          <button class="btn btn-secondary" id="modal-edit-btn">Edit</button>
+          <button class="btn btn-primary" id="modal-save-btn" style="display: none;">Save</button>
+          <button class="btn btn-secondary" id="modal-cancel-btn" style="display: none;">Cancel</button>
+          <button class="modal-close" id="modal-close-btn" aria-label="Close">
+            <svg viewBox="0 0 24 24">
+              <path d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z"/>
+            </svg>
+          </button>
+        </div>
       </div>
       <div class="modal-body" id="modal-body">
         <!-- Note content will be inserted here -->
       </div>
+      <textarea class="modal-editor" id="modal-editor" style="display: none;"></textarea>
     </div>
   </div>
 

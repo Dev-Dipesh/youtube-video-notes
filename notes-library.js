@@ -2,23 +2,38 @@
 
 let allNotes = [];
 let filteredNotes = [];
+let activeNoteId = null;
 
 // ==================== DARK MODE ====================
 const darkModeToggle = document.getElementById('darkModeToggle');
-const darkModeIcon = document.getElementById('darkModeIcon');
+const themeKey = 'notesLibraryTheme';
+const prefersDarkQuery = window.matchMedia('(prefers-color-scheme: dark)');
 
-// Load dark mode preference from localStorage
-const isDarkMode = localStorage.getItem('notesLibraryDarkMode') === 'true';
-if (isDarkMode) {
-  document.body.classList.add('dark-mode');
+function applyTheme(theme) {
+  const isDark = theme === 'dark';
+  document.body.classList.toggle('dark-mode', isDark);
+}
+
+const storedTheme = localStorage.getItem(themeKey);
+const hasStoredTheme = storedTheme === 'dark' || storedTheme === 'light';
+
+if (hasStoredTheme) {
+  applyTheme(storedTheme);
+} else {
+  applyTheme(prefersDarkQuery.matches ? 'dark' : 'light');
+  prefersDarkQuery.addEventListener('change', (e) => {
+    applyTheme(e.matches ? 'dark' : 'light');
+  });
 }
 
 // Toggle dark mode
 if (darkModeToggle) {
   darkModeToggle.addEventListener('click', () => {
-    document.body.classList.toggle('dark-mode');
-    const isDark = document.body.classList.contains('dark-mode');
-    localStorage.setItem('notesLibraryDarkMode', isDark);
+    const nextTheme = document.body.classList.contains('dark-mode')
+      ? 'light'
+      : 'dark';
+    localStorage.setItem(themeKey, nextTheme);
+    applyTheme(nextTheme);
   });
 }
 
@@ -57,7 +72,7 @@ function renderNotes() {
   }
 
   grid.innerHTML = filteredNotes.map(note => `
-    <div class="note-card" onclick="viewNote('${note.videoId}')">
+    <div class="note-card" data-video-id="${note.videoId}">
       <div class="note-header">
         <div class="note-title">${escapeHtml(note.title)}</div>
         <div class="note-date">${formatDate(note.updatedAt)}</div>
@@ -65,20 +80,20 @@ function renderNotes() {
       <div class="note-preview">
         ${escapeHtml(getPreview(note.notes))}
       </div>
-      <div class="note-actions" onclick="event.stopPropagation()">
-        <button class="btn btn-primary" onclick="openVideo('${note.url}')">
+      <div class="note-actions">
+        <button class="btn btn-primary" data-action="open-video" data-url="${note.url}">
           <svg viewBox="0 0 24 24">
             <path d="M10,16.5V7.5L16,12M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2Z"/>
           </svg>
           Watch Video
         </button>
-        <button class="btn btn-secondary" onclick="copyNotes('${note.videoId}')">
+        <button class="btn btn-secondary" data-action="copy" data-video-id="${note.videoId}">
           <svg viewBox="0 0 24 24">
             <path d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"/>
           </svg>
           Copy
         </button>
-        <button class="btn btn-secondary" onclick="downloadNotes('${note.videoId}')">
+        <button class="btn btn-secondary" data-action="download" data-video-id="${note.videoId}">
           <svg viewBox="0 0 24 24">
             <path d="M5,20H19V18H5M19,9H15V3H9V9H5L12,16L19,9Z"/>
           </svg>
@@ -110,6 +125,35 @@ if (searchInput) {
   });
 }
 
+// Card and button interactions
+const notesGrid = document.getElementById('notes-grid');
+if (notesGrid) {
+  notesGrid.addEventListener('click', (e) => {
+    const actionButton = e.target.closest('button[data-action]');
+    if (actionButton) {
+      e.stopPropagation();
+      const action = actionButton.dataset.action;
+      if (action === 'open-video') {
+        openVideo(actionButton.dataset.url);
+        return;
+      }
+      if (action === 'copy') {
+        copyNotes(actionButton.dataset.videoId);
+        return;
+      }
+      if (action === 'download') {
+        downloadNotes(actionButton.dataset.videoId);
+        return;
+      }
+    }
+
+    const card = e.target.closest('.note-card');
+    if (card && notesGrid.contains(card)) {
+      viewNote(card.dataset.videoId);
+    }
+  });
+}
+
 // Sort functionality
 const sortSelect = document.getElementById('sort-select');
 if (sortSelect) {
@@ -135,11 +179,22 @@ function viewNote(videoId) {
 
   const modalTitle = document.getElementById('modal-title');
   const modalBody = document.getElementById('modal-body');
+  const modalEditor = document.getElementById('modal-editor');
+  const modalDepthSelect = document.getElementById('modal-depth-select');
   const noteModal = document.getElementById('note-modal');
 
   if (modalTitle) modalTitle.textContent = note.title;
   if (modalBody) modalBody.innerHTML = renderMarkdown(note.notes);
+  if (modalEditor) {
+    modalEditor.value = note.notes;
+    modalEditor.style.display = 'none';
+  }
+  if (modalDepthSelect) {
+    modalDepthSelect.value = note.reportDepth || 'brief';
+  }
+  setModalEditState(false);
   if (noteModal) noteModal.classList.add('active');
+  activeNoteId = videoId;
 }
 
 // Close modal
@@ -148,6 +203,87 @@ function closeModal() {
   if (noteModal) {
     noteModal.classList.remove('active');
   }
+  activeNoteId = null;
+  setModalEditState(false);
+}
+
+const modalCloseBtn = document.getElementById('modal-close-btn');
+if (modalCloseBtn) {
+  modalCloseBtn.addEventListener('click', closeModal);
+}
+
+const modalEditBtn = document.getElementById('modal-edit-btn');
+const modalSaveBtn = document.getElementById('modal-save-btn');
+const modalCancelBtn = document.getElementById('modal-cancel-btn');
+const modalDepthSelect = document.getElementById('modal-depth-select');
+
+function setModalEditState(isEditing) {
+  const modalBody = document.getElementById('modal-body');
+  const modalEditor = document.getElementById('modal-editor');
+  if (modalBody) modalBody.style.display = isEditing ? 'none' : 'block';
+  if (modalEditor) modalEditor.style.display = isEditing ? 'block' : 'none';
+  if (modalEditBtn) modalEditBtn.style.display = isEditing ? 'none' : 'inline-flex';
+  if (modalSaveBtn) modalSaveBtn.style.display = isEditing ? 'inline-flex' : 'none';
+  if (modalCancelBtn) modalCancelBtn.style.display = isEditing ? 'inline-flex' : 'none';
+}
+
+if (modalEditBtn) {
+  modalEditBtn.addEventListener('click', () => {
+    if (!activeNoteId) return;
+    setModalEditState(true);
+  });
+}
+
+if (modalCancelBtn) {
+  modalCancelBtn.addEventListener('click', () => {
+    setModalEditState(false);
+  });
+}
+
+if (modalSaveBtn) {
+  modalSaveBtn.addEventListener('click', () => {
+    if (!activeNoteId) return;
+    const modalEditor = document.getElementById('modal-editor');
+    const updatedNotes = modalEditor ? modalEditor.value : '';
+    const note = allNotes.find(n => n.videoId === activeNoteId);
+    if (!note) return;
+
+    chrome.storage.local.get(['youtube_video_notes'], (result) => {
+      const notesData = result.youtube_video_notes || {};
+      if (!notesData[activeNoteId]) return;
+      notesData[activeNoteId].notes = updatedNotes;
+      notesData[activeNoteId].reportDepth = note.reportDepth || 'brief';
+      notesData[activeNoteId].updatedAt = new Date().toISOString();
+      chrome.storage.local.set({ youtube_video_notes: notesData }, () => {
+        note.notes = updatedNotes;
+        note.updatedAt = notesData[activeNoteId].updatedAt;
+        renderNotes();
+        updateStats();
+        const modalBody = document.getElementById('modal-body');
+        if (modalBody) modalBody.innerHTML = renderMarkdown(updatedNotes);
+        setModalEditState(false);
+        showToast('Notes updated!', 'success');
+      });
+    });
+  });
+}
+
+if (modalDepthSelect) {
+  modalDepthSelect.addEventListener('change', (event) => {
+    if (!activeNoteId) return;
+    const depth = event.target.value;
+    const note = allNotes.find(n => n.videoId === activeNoteId);
+    if (!note) return;
+    note.reportDepth = depth;
+    chrome.storage.local.get(['youtube_video_notes'], (result) => {
+      const notesData = result.youtube_video_notes || {};
+      if (!notesData[activeNoteId]) return;
+      notesData[activeNoteId].reportDepth = depth;
+      chrome.storage.local.set({ youtube_video_notes: notesData }, () => {
+        showToast('Depth updated', 'success');
+      });
+    });
+  });
 }
 
 // Open video in new tab
@@ -243,31 +379,174 @@ function formatDate(dateString) {
 }
 
 function renderMarkdown(text) {
-  // First, normalize asterisk bullets to hyphens for consistency
-  // This handles cases where the model uses "* item" instead of "- item"
-  let normalized = text.replace(/^\s*\*\s+/gm, "- ");
+  const normalized = text
+    .replace(
+      /^\s*-\s+\*\*(Executive Summary|Key Themes|Critical Insights|Notable Quotes|Recommendations)\*\*\s*:?/gim,
+      "## $1"
+    )
+    .replace(/^\s*-\s+(#{2,3})\s+/gm, "$1 ")
+    .replace(/^\s*\*\s+/gm, "- ");
 
-  let html = normalized
-    .replace(/^### (.*$)/gim, '<h3>$1</h3>')
-    .replace(/^## (.*$)/gim, '<h2>$1</h2>')
-    .replace(/^# (.*$)/gim, '<h1>$1</h1>')
-    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-    .replace(/(?<!\*)\*(?!\*)([^*]+)\*(?!\*)/g, '<em>$1</em>')
-    .replace(/`(.*?)`/g, '<code>$1</code>')
-    .replace(/^> (.*$)/gim, '<blockquote>$1</blockquote>')
-    .replace(/^[\*\-] (.*$)/gim, '<li>$1</li>')
-    .replace(/^(\d+)\. (.*$)/gim, '<li>$2</li>')
-    .replace(/\n\n/g, '</p><p>')
-    .replace(/\n/g, '<br>');
+  const escapeHtml = (input) =>
+    input
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;");
 
-  html = html.replace(/(<li>.*?<\/li>(?:\s*<br>\s*<li>.*?<\/li>)*)/gs, '<ul>$1</ul>');
-  html = html.replace(/<\/li>\s*<br>\s*<li>/g, '</li><li>');
+  const formatInline = (input) => {
+    const escaped = escapeHtml(input);
+    const parts = escaped.split(/`/);
+    return parts
+      .map((part, index) => {
+        if (index % 2 === 1) {
+          return `<code>${part}</code>`;
+        }
+        return part
+          .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
+          .replace(/\*(.+?)\*/g, "<em>$1</em>");
+      })
+      .join("");
+  };
 
-  if (!html.startsWith('<')) {
-    html = `<p>${html}</p>`;
+  const lines = normalized.split(/\r?\n/);
+  const html = [];
+  const listStack = [];
+  let paragraphBuffer = [];
+
+  const closeParagraph = () => {
+    if (paragraphBuffer.length) {
+      html.push(`<p>${formatInline(paragraphBuffer.join(" "))}</p>`);
+      paragraphBuffer = [];
+    }
+  };
+
+  const closeLists = (targetLevel = 0) => {
+    while (listStack.length > targetLevel) {
+      const list = listStack.pop();
+      html.push(`</${list.type}>`);
+    }
+  };
+
+  const openList = (type) => {
+    html.push(`<${type}>`);
+    listStack.push({ type });
+  };
+
+  const parseTable = (startIndex) => {
+    const headerLine = lines[startIndex];
+    const separatorLine = lines[startIndex + 1];
+    if (!separatorLine) return null;
+    const separatorPattern = /^\s*\|?(\s*:?-+:?\s*\|)+\s*:?-+:?\s*\|?\s*$/;
+    if (!separatorPattern.test(separatorLine)) return null;
+
+    const parseRow = (row) =>
+      row
+        .trim()
+        .replace(/^\|/, "")
+        .replace(/\|$/, "")
+        .split("|")
+        .map((cell) => formatInline(cell.trim()));
+
+    const headerCells = parseRow(headerLine);
+    let i = startIndex + 2;
+    const bodyRows = [];
+    while (i < lines.length && /\|/.test(lines[i])) {
+      bodyRows.push(parseRow(lines[i]));
+      i += 1;
+    }
+
+    let tableHtml = "<table><thead><tr>";
+    tableHtml += headerCells.map((cell) => `<th>${cell}</th>`).join("");
+    tableHtml += "</tr></thead><tbody>";
+    tableHtml += bodyRows
+      .map(
+        (row) =>
+          `<tr>${row.map((cell) => `<td>${cell}</td>`).join("")}</tr>`
+      )
+      .join("");
+    tableHtml += "</tbody></table>";
+    return { html: tableHtml, nextIndex: i };
+  };
+
+  let i = 0;
+  while (i < lines.length) {
+    const line = lines[i];
+    const trimmed = line.trim();
+
+    if (!trimmed) {
+      closeParagraph();
+      closeLists(0);
+      i += 1;
+      continue;
+    }
+
+    const tableResult = parseTable(i);
+    if (tableResult) {
+      closeParagraph();
+      closeLists(0);
+      html.push(tableResult.html);
+      i = tableResult.nextIndex;
+      continue;
+    }
+
+    const headingMatch = trimmed.match(/^(#{1,3})\s+(.*)$/);
+    if (headingMatch) {
+      closeParagraph();
+      closeLists(0);
+      const level = headingMatch[1].length;
+      html.push(`<h${level}>${formatInline(headingMatch[2])}</h${level}>`);
+      i += 1;
+      continue;
+    }
+
+    if (trimmed.startsWith(">")) {
+      closeParagraph();
+      closeLists(0);
+      const quoteLines = [];
+      while (i < lines.length && lines[i].trim().startsWith(">")) {
+        quoteLines.push(lines[i].replace(/^\s*>\s?/, ""));
+        i += 1;
+      }
+      const quoteContent = quoteLines.map((q) => formatInline(q)).join("<br>");
+      html.push(`<blockquote>${quoteContent}</blockquote>`);
+      continue;
+    }
+
+    const listMatch = line.match(/^(\s*)([-*]|\d+\.)\s+(.*)$/);
+    if (listMatch) {
+      closeParagraph();
+      const indent = listMatch[1].replace(/\t/g, "  ").length;
+      const level = Math.floor(indent / 2);
+      const isOrdered = /^\d+\./.test(listMatch[2]);
+      const listType = isOrdered ? "ol" : "ul";
+
+      if (listStack.length < level + 1) {
+        while (listStack.length < level) {
+          openList("ul");
+        }
+        openList(listType);
+      } else if (listStack.length > level + 1) {
+        closeLists(level + 1);
+      }
+
+      const current = listStack[listStack.length - 1];
+      if (current && current.type !== listType) {
+        closeLists(level);
+        openList(listType);
+      }
+
+      html.push(`<li>${formatInline(listMatch[3])}</li>`);
+      i += 1;
+      continue;
+    }
+
+    paragraphBuffer.push(trimmed);
+    i += 1;
   }
 
-  return html;
+  closeParagraph();
+  closeLists(0);
+  return html.join("\n");
 }
 
 // Close modal on escape key
