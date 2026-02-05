@@ -158,7 +158,7 @@ If you receive API errors, verify your Gemini API key and quotas. Check the brow
 
 ### Other API Errors
 
-- Verify your Z.AI API key is valid
+- Verify your Gemini API key is valid
 - Ensure internet connectivity
 - Check browser console (F12) for detailed error messages
 - Look for `[YouTube Notes] API Error Details:` logs with full error info
@@ -207,7 +207,3 @@ Enable console logs:
 ## License
 
 MIT License - feel free to modify and use for your needs.
-
-## Credits
-
-Built with Z.AI's GLM-4.7 model for high-quality AI-generated summaries.
