@@ -285,6 +285,12 @@ Your task is to transform video transcripts into highly structured, executive-le
 4. **Actionability**: Highlight key insights, frameworks, and takeaways
 5. **Clarity**: Use precise, professional language with concrete examples
 
+**CRITICAL MARKDOWN FORMATTING RULES:**
+- Use hyphens (-) for ALL bullet points, NEVER asterisks (*)
+- Use ## for main sections, ### for subsections
+- Use **text** for bold, NEVER for emphasis
+- Keep formatting clean and consistent
+
 Format your response in Markdown with:
 - **Executive Summary** (3-4 bullet points capturing the essence)
 - **Key Themes** (2-4 main themes with sub-points)
@@ -1147,17 +1153,17 @@ Focus on signal over noise. Every word should add value. Be ruthless in removing
           <button id="ytn-generate-btn" class="ytn-btn ytn-btn-primary">
             Generate Notes
           </button>
-        </div>
-
-        <div id="ytn-cost-estimate" class="ytn-cost-estimate" style="display: none;"></div>
-
-        <div id="ytn-actions-secondary" class="ytn-actions-secondary" style="display: none;">
-          <button id="ytn-regenerate-btn" class="ytn-btn ytn-btn-ghost" title="Regenerate notes">
+          <button id="ytn-regenerate-btn" class="ytn-btn ytn-btn-secondary" style="display: none;" title="Regenerate notes">
             <svg viewBox="0 0 24 24" fill="currentColor">
               <path d="M17.65,6.35C16.2,4.9 14.21,4 12,4A8,8 0 0,0 4,12A8,8 0 0,0 12,20C15.73,20 18.84,17.45 19.73,14H17.65C16.83,16.33 14.61,18 12,18A6,6 0 0,1 6,12A6,6 0 0,1 12,6C13.66,6 15.14,6.69 16.22,7.78L13,11H20V4L17.65,6.35Z"/>
             </svg>
             Regenerate
           </button>
+        </div>
+
+        <div id="ytn-cost-estimate" class="ytn-cost-estimate" style="display: none;"></div>
+
+        <div id="ytn-actions-secondary" class="ytn-actions-secondary" style="display: none;">
           <button id="ytn-copy-btn" class="ytn-btn ytn-btn-secondary" title="Copy notes (Ctrl+C)">
             <svg viewBox="0 0 24 24" fill="currentColor">
               <path d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"/>
@@ -1179,8 +1185,8 @@ Focus on signal over noise. Every word should add value. Be ruthless in removing
         </div>
 
         <div class="ytn-keyboard-hint">
-          <span class="ytn-kbd">Ctrl+K</span> Toggle • 
-          <span class="ytn-kbd">Ctrl+G</span> Generate • 
+          <span class="ytn-kbd">Ctrl+K</span> Toggle •
+          <span class="ytn-kbd">Ctrl+G</span> Generate •
           <span class="ytn-kbd">ESC</span> Close
         </div>
 
@@ -1473,11 +1479,16 @@ Focus on signal over noise. Every word should add value. Be ruthless in removing
 
     // Show action buttons
     panelElements.actionsSecondary.style.display = "flex";
+    panelElements.regenerateBtn.style.display = "inline-flex";
   }
 
   function renderMarkdown(text) {
+    // First, normalize asterisk bullets to hyphens for consistency
+    // This handles cases where the model uses "* item" instead of "- item"
+    let normalized = text.replace(/^\s*\*\s+/gm, "- ");
+
     // Basic markdown rendering
-    let html = text
+    let html = normalized
       // Headers
       .replace(/^### (.*$)/gim, "<h3>$1</h3>")
       .replace(/^## (.*$)/gim, "<h2>$1</h2>")
@@ -1541,7 +1552,11 @@ Focus on signal over noise. Every word should add value. Be ruthless in removing
     }
   }
 
-  function openNotesLibrary() {
+  async function openNotesLibrary() {
+    // Ensure storage is synced before opening library
+    // Small delay to ensure Chrome storage has fully persisted
+    await new Promise(resolve => setTimeout(resolve, 100));
+
     // Open notes library in new tab
     const libraryUrl = chrome.runtime.getURL("notes-library.html");
     window.open(libraryUrl, "_blank");
@@ -1584,8 +1599,8 @@ Focus on signal over noise. Every word should add value. Be ruthless in removing
     // Create toolbar button
     createToolbarButton();
 
-    // Start with panel hidden
-    togglePanel(false);
+    // Start with panel visible
+    togglePanel(true);
 
     // Initialize keyboard shortcuts
     initKeyboardShortcuts();

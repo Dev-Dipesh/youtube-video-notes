@@ -16,6 +16,12 @@
       background: #f9f9f9;
       color: #0f0f0f;
       line-height: 1.6;
+      transition: background 0.3s, color 0.3s;
+    }
+
+    body.dark-mode {
+      background: #0f0f0f;
+      color: #f1f1f1;
     }
 
     .container {
@@ -26,6 +32,13 @@
 
     header {
       margin-bottom: 40px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .header-left {
+      flex: 1;
     }
 
     h1 {
@@ -37,6 +50,41 @@
       gap: 12px;
     }
 
+    .dark-mode-toggle {
+      width: 40px;
+      height: 40px;
+      padding: 0;
+      background: white;
+      border: 2px solid #e5e5e5;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+    }
+
+    .dark-mode-toggle:hover {
+      border-color: #ff0000;
+      transform: scale(1.05);
+    }
+
+    .dark-mode-toggle svg {
+      width: 20px;
+      height: 20px;
+      fill: #0f0f0f;
+      transition: fill 0.2s;
+    }
+
+    body.dark-mode .dark-mode-toggle {
+      background: #272727;
+      border-color: #404040;
+    }
+
+    body.dark-mode .dark-mode-toggle svg {
+      fill: #f1f1f1;
+    }
+
     h1 svg {
       width: 32px;
       height: 32px;
@@ -46,6 +94,10 @@
     .subtitle {
       font-size: 16px;
       color: #606060;
+    }
+
+    body.dark-mode .subtitle {
+      color: #aaaaaa;
     }
 
     .controls {
@@ -70,6 +122,16 @@
       border-color: #ff0000;
     }
 
+    body.dark-mode .search-box {
+      background: #1f1f1f;
+      border-color: #303030;
+      color: #f1f1f1;
+    }
+
+    body.dark-mode .search-box:focus {
+      border-color: #ff0000;
+    }
+
     .sort-select {
       padding: 12px 16px;
       border: 2px solid #e5e5e5;
@@ -77,6 +139,12 @@
       font-size: 14px;
       background: white;
       cursor: pointer;
+    }
+
+    body.dark-mode .sort-select {
+      background: #1f1f1f;
+      border-color: #303030;
+      color: #f1f1f1;
     }
 
     .stats {
@@ -87,6 +155,11 @@
       display: flex;
       gap: 24px;
       border: 1px solid #e5e5e5;
+    }
+
+    body.dark-mode .stats {
+      background: #1f1f1f;
+      border-color: #303030;
     }
 
     .stat-item {
@@ -126,10 +199,19 @@
       cursor: pointer;
     }
 
+    body.dark-mode .note-card {
+      background: #1f1f1f;
+      border-color: #303030;
+    }
+
     .note-card:hover {
       border-color: #cccccc;
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
       transform: translateY(-2px);
+    }
+
+    body.dark-mode .note-card:hover {
+      border-color: #404040;
     }
 
     .note-header {
@@ -148,10 +230,18 @@
       line-height: 1.4;
     }
 
+    body.dark-mode .note-title {
+      color: #f1f1f1;
+    }
+
     .note-date {
       font-size: 13px;
       color: #909090;
       white-space: nowrap;
+    }
+
+    body.dark-mode .note-date {
+      color: #717171;
     }
 
     .note-preview {
@@ -164,6 +254,10 @@
       position: relative;
     }
 
+    body.dark-mode .note-preview {
+      color: #aaaaaa;
+    }
+
     .note-preview::after {
       content: '';
       position: absolute;
@@ -172,6 +266,10 @@
       right: 0;
       height: 30px;
       background: linear-gradient(transparent, white);
+    }
+
+    body.dark-mode .note-preview::after {
+      background: linear-gradient(transparent, #1f1f1f);
     }
 
     .note-actions {
@@ -213,8 +311,17 @@
       color: #0f0f0f;
     }
 
+    body.dark-mode .btn-secondary {
+      background: #272727;
+      color: #f1f1f1;
+    }
+
     .btn-secondary:hover {
       background: #e5e5e5;
+    }
+
+    body.dark-mode .btn-secondary:hover {
+      background: #3d3d3d;
     }
 
     .empty-state {
@@ -235,9 +342,17 @@
       margin-bottom: 8px;
     }
 
+    body.dark-mode .empty-title {
+      color: #f1f1f1;
+    }
+
     .empty-description {
       font-size: 16px;
       color: #606060;
+    }
+
+    body.dark-mode .empty-description {
+      color: #aaaaaa;
     }
 
     .modal {
@@ -269,6 +384,10 @@
       position: relative;
     }
 
+    body.dark-mode .modal-content {
+      background: #1f1f1f;
+    }
+
     .modal-header {
       display: flex;
       justify-content: space-between;
@@ -281,6 +400,10 @@
       font-size: 24px;
       font-weight: 600;
       flex: 1;
+    }
+
+    body.dark-mode .modal-title {
+      color: #f1f1f1;
     }
 
     .modal-close {
@@ -297,8 +420,16 @@
       transition: background 0.2s;
     }
 
+    body.dark-mode .modal-close {
+      background: #272727;
+    }
+
     .modal-close:hover {
       background: #e5e5e5;
+    }
+
+    body.dark-mode .modal-close:hover {
+      background: #3d3d3d;
     }
 
     .modal-close svg {
@@ -390,13 +521,20 @@
 <body>
   <div class="container">
     <header>
-      <h1>
-        <svg viewBox="0 0 24 24">
-          <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z"/>
+      <div class="header-left">
+        <h1>
+          <svg viewBox="0 0 24 24">
+            <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z"/>
+          </svg>
+          YouTube Notes Library
+        </h1>
+        <p class="subtitle">All your video notes in one place</p>
+      </div>
+      <button class="dark-mode-toggle" id="darkModeToggle" title="Toggle dark mode">
+        <svg viewBox="0 0 24 24" id="darkModeIcon">
+          <path d="M12,18C11.11,18 10.26,17.8 9.5,17.45C11.56,16.5 13,14.42 13,12C13,9.58 11.56,7.5 9.5,6.55C10.26,6.2 11.11,6 12,6A6,6 0 0,1 18,12A6,6 0 0,1 12,18M20,8.69V4H15.31L12,0.69L8.69,4H4V8.69L0.69,12L4,15.31V20H8.69L12,23.31L15.31,20H20V15.31L23.31,12L20,8.69Z"/>
         </svg>
-        YouTube Notes Library
-      </h1>
-      <p class="subtitle">All your video notes in one place</p>
+      </button>
     </header>
 
     <div class="controls">
@@ -451,11 +589,32 @@
     let allNotes = [];
     let filteredNotes = [];
 
+    // ==================== DARK MODE ====================
+    const darkModeToggle = document.getElementById('darkModeToggle');
+    const darkModeIcon = document.getElementById('darkModeIcon');
+
+    // Load dark mode preference from localStorage
+    const isDarkMode = localStorage.getItem('notesLibraryDarkMode') === 'true';
+    if (isDarkMode) {
+      document.body.classList.add('dark-mode');
+    }
+
+    // Toggle dark mode
+    darkModeToggle.addEventListener('click', () => {
+      document.body.classList.toggle('dark-mode');
+      const isDark = document.body.classList.contains('dark-mode');
+      localStorage.setItem('notesLibraryDarkMode', isDark);
+    });
+
     // Load all notes from storage
     async function loadNotes() {
       chrome.storage.local.get(['youtube_video_notes'], (result) => {
         const notesData = result.youtube_video_notes || {};
-        allNotes = Object.values(notesData).sort((a, b) => 
+
+        console.log('[Notes Library] Loading notes:', notesData);
+        console.log('[Notes Library] Number of notes:', Object.keys(notesData).length);
+
+        allNotes = Object.values(notesData).sort((a, b) =>
           new Date(b.updatedAt) - new Date(a.updatedAt)
         );
         filteredNotes = [...allNotes];
@@ -617,7 +776,11 @@
     }
 
     function renderMarkdown(text) {
-      let html = text
+      // First, normalize asterisk bullets to hyphens for consistency
+      // This handles cases where the model uses "* item" instead of "- item"
+      let normalized = text.replace(/^\s*\*\s+/gm, "- ");
+
+      let html = normalized
         .replace(/^### (.*$)/gim, '<h3>$1</h3>')
         .replace(/^## (.*$)/gim, '<h2>$1</h2>')
         .replace(/^# (.*$)/gim, '<h1>$1</h1>')
