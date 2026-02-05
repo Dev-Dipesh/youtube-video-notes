@@ -159,7 +159,6 @@ If you receive API errors, verify your Gemini API key and quotas. Check the brow
 ### Other API Errors
 
 - Verify your Z.AI API key is valid
-- Check your API quota/credits in Z.AI dashboard
 - Ensure internet connectivity
 - Check browser console (F12) for detailed error messages
 - Look for `[YouTube Notes] API Error Details:` logs with full error info
