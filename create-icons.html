@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>YouTube McKinsey Summary Extension - Icon Generator</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          Oxygen, Ubuntu, Cantarell, sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        padding: 40px 20px;
+      }
+
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        background: white;
+        border-radius: 20px;
+        padding: 40px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      }
+
+      h1 {
+        color: #2d3748;
+        margin-bottom: 10px;
+        font-size: 32px;
+      }
+
+      .subtitle {
+        color: #718096;
+        margin-bottom: 40px;
+        font-size: 16px;
+      }
+
+      .controls {
+        background: #f7fafc;
+        padding: 30px;
+        border-radius: 12px;
+        margin-bottom: 40px;
+      }
+
+      .control-group {
+        margin-bottom: 20px;
+      }
+
+      label {
+        display: block;
+        margin-bottom: 8px;
+        color: #4a5568;
+        font-weight: 600;
+        font-size: 14px;
+      }
+
+      select,
+      input[type="color"],
+      input[type="range"] {
+        width: 100%;
+        padding: 10px;
+        border: 2px solid #e2e8f0;
+        border-radius: 8px;
+        font-size: 14px;
+        background: white;
+      }
+
+      input[type="range"] {
+        padding: 0;
+      }
+
+      .color-inputs {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 20px;
+      }
+
+      .preview-section {
+        margin-bottom: 40px;
+      }
+
+      .preview-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 20px;
+        margin-top: 20px;
+      }
+
+      .preview-item {
+        text-align: center;
+        padding: 20px;
+        background: #f7fafc;
+        border-radius: 12px;
+        border: 2px solid #e2e8f0;
+      }
+
+      .preview-item canvas {
+        display: block;
+        margin: 0 auto 10px;
+        border-radius: 8px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      }
+
+      .preview-label {
+        font-weight: 600;
+        color: #4a5568;
+        font-size: 14px;
+      }
+
+      .download-section {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 15px;
+      }
+
+      button {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        padding: 12px 24px;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: transform 0.2s, box-shadow 0.2s;
+      }
+
+      button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+      }
+
+      button:active {
+        transform: translateY(0);
+      }
+
+      .download-all {
+        grid-column: 1 / -1;
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        padding: 16px 32px;
+        font-size: 16px;
+      }
+
+      h2 {
+        color: #2d3748;
+        margin-bottom: 20px;
+        font-size: 24px;
+      }
+
+      .style-options {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 15px;
+        margin-bottom: 20px;
+      }
+
+      .style-option {
+        padding: 15px;
+        border: 2px solid #e2e8f0;
+        border-radius: 8px;
+        cursor: pointer;
+        text-align: center;
+        transition: all 0.3s;
+        background: white;
+      }
+
+      .style-option:hover {
+        border-color: #667eea;
+        background: #f7fafc;
+      }
+
+      .style-option.active {
+        border-color: #667eea;
+        background: #edf2f7;
+        font-weight: 600;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>📝 YouTube MECE Notes Extension</h1>
+      <p class="subtitle">
+        Chrome Extension Icon Generator - McKinsey-Style Structured Summaries
+      </p>
+
+      <div class="controls">
+        <h2>Design Controls</h2>
+
+        <div class="style-options">
+          <div class="style-option active" data-style="document-lines">
+            📄 Document Lines
+          </div>
+          <div class="style-option" data-style="mece-tree">🌳 MECE Tree</div>
+          <div class="style-option" data-style="ai-spark">✨ AI Spark</div>
+          <div class="style-option" data-style="bullet-transform">
+            🔄 Bullet Transform
+          </div>
+        </div>
+
+        <div class="color-inputs">
+          <div class="control-group">
+            <label>Primary Color</label>
+            <input type="color" id="primaryColor" value="#FF0000" />
+          </div>
+          <div class="control-group">
+            <label>Secondary Color</label>
+            <input type="color" id="secondaryColor" value="#282828" />
+          </div>
+          <div class="control-group">
+            <label>Background</label>
+            <input type="color" id="bgColor" value="#282828" />
+          </div>
+        </div>
+      </div>
+
+      <div class="preview-section">
+        <h2>Preview</h2>
+        <div class="preview-grid">
+          <div class="preview-item">
+            <canvas id="icon16" width="16" height="16"></canvas>
+            <div class="preview-label">16x16</div>
+          </div>
+          <div class="preview-item">
+            <canvas id="icon32" width="32" height="32"></canvas>
+            <div class="preview-label">32x32</div>
+          </div>
+          <div class="preview-item">
+            <canvas id="icon48" width="48" height="48"></canvas>
+            <div class="preview-label">48x48</div>
+          </div>
+          <div class="preview-item">
+            <canvas id="icon128" width="128" height="128"></canvas>
+            <div class="preview-label">128x128</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="download-section">
+        <button onclick="downloadIcon(16)">Download 16x16</button>
+        <button onclick="downloadIcon(32)">Download 32x32</button>
+        <button onclick="downloadIcon(48)">Download 48x48</button>
+        <button onclick="downloadIcon(128)">Download 128x128</button>
+        <button class="download-all" onclick="downloadAll()">
+          📦 Download All Sizes
+        </button>
+      </div>
+    </div>
+
+    <script>
+      let currentStyle = "document-lines";
+
+      // Style selection
+      document.querySelectorAll(".style-option").forEach((option) => {
+        option.addEventListener("click", function () {
+          document
+            .querySelectorAll(".style-option")
+            .forEach((o) => o.classList.remove("active"));
+          this.classList.add("active");
+          currentStyle = this.dataset.style;
+          generateIcons();
+        });
+      });
+
+      // Color controls
+      document
+        .getElementById("primaryColor")
+        .addEventListener("input", generateIcons);
+      document
+        .getElementById("secondaryColor")
+        .addEventListener("input", generateIcons);
+      document
+        .getElementById("bgColor")
+        .addEventListener("input", generateIcons);
+
+      function drawIcon(canvas, size, style) {
+        const ctx = canvas.getContext("2d");
+        const primaryColor = document.getElementById("primaryColor").value;
+        const secondaryColor = document.getElementById("secondaryColor").value;
+        const bgColor = document.getElementById("bgColor").value;
+
+        // Clear canvas
+        ctx.clearRect(0, 0, size, size);
+
+        // Background
+        ctx.fillStyle = bgColor;
+        ctx.fillRect(0, 0, size, size);
+
+        const padding = size * 0.1;
+        const contentSize = size - padding * 2;
+
+        switch (style) {
+          case "document-lines":
+            drawDocumentLinesStyle(
+              ctx,
+              size,
+              padding,
+              contentSize,
+              primaryColor,
+              secondaryColor
+            );
+            break;
+          case "mece-tree":
+            drawMeceTreeStyle(
+              ctx,
+              size,
+              padding,
+              contentSize,
+              primaryColor,
+              secondaryColor
+            );
+            break;
+          case "ai-spark":
+            drawAiSparkStyle(
+              ctx,
+              size,
+              padding,
+              contentSize,
+              primaryColor,
+              secondaryColor
+            );
+            break;
+          case "bullet-transform":
+            drawBulletTransformStyle(
+              ctx,
+              size,
+              padding,
+              contentSize,
+              primaryColor,
+              secondaryColor
+            );
+            break;
+        }
+      }
+
+      function drawDocumentLinesStyle(
+        ctx,
+        size,
+        padding,
+        contentSize,
+        primary,
+        secondary
+      ) {
+        const centerX = size / 2;
+        const centerY = size / 2;
+
+        // Rounded square document background
+        const docPadding = contentSize * 0.15;
+        const docWidth = contentSize * 0.7;
+        const docHeight = contentSize * 0.85;
+        const radius = size * 0.08;
+
+        ctx.fillStyle = primary;
+        ctx.beginPath();
+        ctx.roundRect(
+          centerX - docWidth / 2,
+          centerY - docHeight / 2,
+          docWidth,
+          docHeight,
+          radius
+        );
+        ctx.fill();
+
+        // Horizontal lines representing notes
+        ctx.strokeStyle = "#ffffff";
+        ctx.lineWidth = size * 0.04;
+        ctx.lineCap = "round";
+
+        const lineSpacing = docHeight / 6;
+        const lineWidth = docWidth * 0.7;
+        const startY = centerY - docHeight / 4;
+
+        for (let i = 0; i < 4; i++) {
+          const y = startY + i * lineSpacing;
+          const currentLineWidth = i === 3 ? lineWidth * 0.5 : lineWidth;
+
+          ctx.beginPath();
+          ctx.moveTo(centerX - currentLineWidth / 2, y);
+          ctx.lineTo(centerX + currentLineWidth / 2, y);
+          ctx.stroke();
+        }
+
+        // Small YouTube play indicator in corner
+        const playSize = size * 0.15;
+        const playX = centerX + docWidth / 2 - playSize * 1.2;
+        const playY = centerY - docHeight / 2 + playSize * 1.2;
+
+        ctx.fillStyle = secondary;
+        ctx.beginPath();
+        ctx.arc(playX, playY, playSize / 2, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = "#ffffff";
+        const triSize = playSize * 0.3;
+        ctx.beginPath();
+        ctx.moveTo(playX - triSize / 3, playY - triSize / 2);
+        ctx.lineTo(playX - triSize / 3, playY + triSize / 2);
+        ctx.lineTo(playX + triSize / 2, playY);
+        ctx.closePath();
+        ctx.fill();
+      }
+
+      function drawMeceTreeStyle(
+        ctx,
+        size,
+        padding,
+        contentSize,
+        primary,
+        secondary
+      ) {
+        const centerX = size / 2;
+        const topY = padding + contentSize * 0.2;
+
+        ctx.strokeStyle = primary;
+        ctx.lineWidth = size * 0.06;
+        ctx.lineCap = "round";
+        ctx.lineJoin = "round";
+
+        // Root node
+        const nodeRadius = size * 0.08;
+        ctx.fillStyle = primary;
+        ctx.beginPath();
+        ctx.arc(centerX, topY, nodeRadius, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Main branch
+        const branchHeight = contentSize * 0.25;
+        ctx.beginPath();
+        ctx.moveTo(centerX, topY + nodeRadius);
+        ctx.lineTo(centerX, topY + branchHeight);
+        ctx.stroke();
+
+        // Three sub-branches (MECE structure)
+        const branchWidth = contentSize * 0.5;
+        const branch2Y = topY + branchHeight + contentSize * 0.15;
+
+        ctx.strokeStyle = secondary;
+        ctx.lineWidth = size * 0.05;
+
+        // Left branch
+        ctx.beginPath();
+        ctx.moveTo(centerX, topY + branchHeight);
+        ctx.lineTo(centerX - branchWidth / 2, branch2Y);
+        ctx.stroke();
+
+        // Middle branch
+        ctx.beginPath();
+        ctx.moveTo(centerX, topY + branchHeight);
+        ctx.lineTo(centerX, branch2Y);
+        ctx.stroke();
+
+        // Right branch
+        ctx.beginPath();
+        ctx.moveTo(centerX, topY + branchHeight);
+        ctx.lineTo(centerX + branchWidth / 2, branch2Y);
+        ctx.stroke();
+
+        // End nodes
+        const smallNodeRadius = nodeRadius * 0.7;
+        ctx.fillStyle = secondary;
+
+        ctx.beginPath();
+        ctx.arc(
+          centerX - branchWidth / 2,
+          branch2Y,
+          smallNodeRadius,
+          0,
+          Math.PI * 2
+        );
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.arc(centerX, branch2Y, smallNodeRadius, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.arc(
+          centerX + branchWidth / 2,
+          branch2Y,
+          smallNodeRadius,
+          0,
+          Math.PI * 2
+        );
+        ctx.fill();
+
+        // Leaf nodes (bottom level)
+        const leaf3Y = branch2Y + contentSize * 0.2;
+        const leafSpacing = contentSize * 0.15;
+        const leafNodeRadius = smallNodeRadius * 0.8;
+
+        ctx.strokeStyle = secondary;
+        ctx.lineWidth = size * 0.03;
+
+        // Lines to leaves
+        for (let i = -1; i <= 1; i++) {
+          const fromX = centerX + (i * branchWidth) / 2;
+
+          ctx.beginPath();
+          ctx.moveTo(fromX, branch2Y + smallNodeRadius);
+          ctx.lineTo(fromX - leafSpacing / 2, leaf3Y);
+          ctx.stroke();
+
+          ctx.beginPath();
+          ctx.moveTo(fromX, branch2Y + smallNodeRadius);
+          ctx.lineTo(fromX + leafSpacing / 2, leaf3Y);
+          ctx.stroke();
+
+          // Leaf nodes
+          ctx.fillStyle = secondary;
+          ctx.globalAlpha = 0.7;
+          ctx.beginPath();
+          ctx.arc(
+            fromX - leafSpacing / 2,
+            leaf3Y,
+            leafNodeRadius,
+            0,
+            Math.PI * 2
+          );
+          ctx.fill();
+
+          ctx.beginPath();
+          ctx.arc(
+            fromX + leafSpacing / 2,
+            leaf3Y,
+            leafNodeRadius,
+            0,
+            Math.PI * 2
+          );
+          ctx.fill();
+          ctx.globalAlpha = 1;
+        }
+      }
+
+      function drawAiSparkStyle(
+        ctx,
+        size,
+        padding,
+        contentSize,
+        primary,
+        secondary
+      ) {
+        const centerX = size / 2;
+        const centerY = size / 2;
+
+        // Document outline
+        const docWidth = contentSize * 0.65;
+        const docHeight = contentSize * 0.8;
+        const radius = size * 0.08;
+
+        ctx.fillStyle = primary;
+        ctx.beginPath();
+        ctx.roundRect(
+          centerX - docWidth / 2,
+          centerY - docHeight / 2,
+          docWidth,
+          docHeight,
+          radius
+        );
+        ctx.fill();
+
+        // Document lines
+        ctx.strokeStyle = "#ffffff";
+        ctx.lineWidth = size * 0.035;
+        ctx.lineCap = "round";
+
+        const lineSpacing = docHeight / 7;
+        const lineWidth = docWidth * 0.6;
+        const startY = centerY - docHeight / 3;
+
+        for (let i = 0; i < 3; i++) {
+          const y = startY + i * lineSpacing;
+
+          ctx.beginPath();
+          ctx.moveTo(centerX - lineWidth / 2, y);
+          ctx.lineTo(centerX + lineWidth / 2, y);
+          ctx.stroke();
+        }
+
+        // AI sparkle/stars
+        const sparkleSize = size * 0.12;
+        const sparkles = [
+          { x: centerX + docWidth / 3, y: centerY - docHeight / 3, size: 1 },
+          { x: centerX - docWidth / 3, y: centerY + docHeight / 4, size: 0.7 },
+          {
+            x: centerX + docWidth / 2.5,
+            y: centerY + docHeight / 3,
+            size: 0.85,
+          },
+        ];
+
+        sparkles.forEach((sparkle) => {
+          const s = sparkleSize * sparkle.size;
+          drawSparkle(ctx, sparkle.x, sparkle.y, s, secondary);
+        });
+      }
+
+      function drawSparkle(ctx, x, y, size, color) {
+        ctx.fillStyle = color;
+        ctx.save();
+        ctx.translate(x, y);
+
+        // Four-pointed star
+        const points = 4;
+        const outerRadius = size;
+        const innerRadius = size * 0.3;
+
+        ctx.beginPath();
+        for (let i = 0; i < points * 2; i++) {
+          const radius = i % 2 === 0 ? outerRadius : innerRadius;
+          const angle = (i * Math.PI) / points;
+          const px = Math.cos(angle) * radius;
+          const py = Math.sin(angle) * radius;
+
+          if (i === 0) ctx.moveTo(px, py);
+          else ctx.lineTo(px, py);
+        }
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.restore();
+      }
+
+      function drawBulletTransformStyle(
+        ctx,
+        size,
+        padding,
+        contentSize,
+        primary,
+        secondary
+      ) {
+        const centerX = size / 2;
+        const centerY = size / 2;
+
+        // Left side: Play button (YouTube video)
+        const playRadius = contentSize * 0.18;
+        const leftX = centerX - contentSize * 0.25;
+
+        ctx.fillStyle = primary;
+        ctx.beginPath();
+        ctx.arc(leftX, centerY, playRadius, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = "#ffffff";
+        const triSize = playRadius * 0.6;
+        ctx.beginPath();
+        ctx.moveTo(leftX - triSize / 4, centerY - triSize / 2);
+        ctx.lineTo(leftX - triSize / 4, centerY + triSize / 2);
+        ctx.lineTo(leftX + triSize / 2, centerY);
+        ctx.closePath();
+        ctx.fill();
+
+        // Arrow in middle
+        ctx.strokeStyle = secondary;
+        ctx.fillStyle = secondary;
+        ctx.lineWidth = size * 0.05;
+        ctx.lineCap = "round";
+
+        const arrowStartX = leftX + playRadius + size * 0.05;
+        const arrowEndX = centerX + size * 0.05;
+
+        ctx.beginPath();
+        ctx.moveTo(arrowStartX, centerY);
+        ctx.lineTo(arrowEndX, centerY);
+        ctx.stroke();
+
+        // Arrow head
+        const arrowSize = size * 0.08;
+        ctx.beginPath();
+        ctx.moveTo(arrowEndX, centerY);
+        ctx.lineTo(arrowEndX - arrowSize, centerY - arrowSize / 2);
+        ctx.lineTo(arrowEndX - arrowSize, centerY + arrowSize / 2);
+        ctx.closePath();
+        ctx.fill();
+
+        // Right side: Bullet points (structured notes)
+        const rightX = centerX + contentSize * 0.25;
+        const bulletRadius = size * 0.04;
+        const bulletSpacing = size * 0.12;
+        const lineLength = contentSize * 0.2;
+        const startY = centerY - bulletSpacing;
+
+        ctx.fillStyle = secondary;
+        ctx.strokeStyle = secondary;
+        ctx.lineWidth = size * 0.03;
+
+        for (let i = 0; i < 3; i++) {
+          const y = startY + i * bulletSpacing;
+
+          // Bullet point
+          ctx.beginPath();
+          ctx.arc(rightX - lineLength / 2, y, bulletRadius, 0, Math.PI * 2);
+          ctx.fill();
+
+          // Line after bullet
+          const currentLineLength = i === 2 ? lineLength * 0.6 : lineLength;
+          ctx.beginPath();
+          ctx.moveTo(rightX - lineLength / 2 + bulletRadius * 2, y);
+          ctx.lineTo(rightX - lineLength / 2 + currentLineLength, y);
+          ctx.stroke();
+        }
+      }
+
+      function generateIcons() {
+        const sizes = [16, 32, 48, 128];
+        sizes.forEach((size) => {
+          const canvas = document.getElementById(`icon${size}`);
+          drawIcon(canvas, size, currentStyle);
+        });
+      }
+
+      function downloadIcon(size) {
+        const canvas = document.getElementById(`icon${size}`);
+        const link = document.createElement("a");
+        link.download = `icon-${size}.png`;
+        link.href = canvas.toDataURL();
+        link.click();
+      }
+
+      function downloadAll() {
+        const sizes = [16, 32, 48, 128];
+        sizes.forEach((size, index) => {
+          setTimeout(() => {
+            downloadIcon(size);
+          }, index * 200);
+        });
+      }
+
+      // Initial generation
+      generateIcons();
+    </script>
+  </body>
+</html>

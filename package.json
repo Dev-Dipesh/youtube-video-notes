@@ -1,0 +1,20 @@
+{
+  "name": "youtube-video-notes",
+  "version": "0.1.0",
+  "description": "Generate McKinsey-style MECE notes from YouTube video transcripts using AI",
+  "scripts": {
+    "build": "bash release.sh",
+    "test": "echo \"No tests specified yet\" && exit 0"
+  },
+  "keywords": [
+    "youtube",
+    "notes",
+    "ai",
+    "summary",
+    "transcript",
+    "mckinsey",
+    "mece"
+  ],
+  "author": "",
+  "license": "MIT"
+}

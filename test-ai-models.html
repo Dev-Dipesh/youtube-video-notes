@@ -1,0 +1,775 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AI Model Tester - YouTube Notes Extension</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        padding: 40px 20px;
+      }
+
+      .container {
+        max-width: 1000px;
+        margin: 0 auto;
+        background: white;
+        border-radius: 20px;
+        padding: 40px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      }
+
+      h1 {
+        color: #2d3748;
+        margin-bottom: 10px;
+        font-size: 32px;
+      }
+
+      .subtitle {
+        color: #718096;
+        margin-bottom: 40px;
+        font-size: 16px;
+      }
+
+      .provider-tabs {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 30px;
+        border-bottom: 2px solid #e2e8f0;
+      }
+
+      .tab {
+        padding: 12px 24px;
+        background: transparent;
+        border: none;
+        border-bottom: 3px solid transparent;
+        font-size: 16px;
+        font-weight: 600;
+        color: #718096;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+
+      .tab:hover {
+        color: #2d3748;
+      }
+
+      .tab.active {
+        color: #667eea;
+        border-bottom-color: #667eea;
+      }
+
+      .provider-section {
+        display: none;
+      }
+
+      .provider-section.active {
+        display: block;
+      }
+
+      .form-group {
+        margin-bottom: 20px;
+      }
+
+      label {
+        display: block;
+        margin-bottom: 8px;
+        color: #4a5568;
+        font-weight: 600;
+        font-size: 14px;
+      }
+
+      input[type="text"],
+      select,
+      textarea {
+        width: 100%;
+        padding: 12px;
+        border: 2px solid #e2e8f0;
+        border-radius: 8px;
+        font-size: 14px;
+        background: white;
+        transition: border-color 0.2s;
+      }
+
+      input[type="text"]:focus,
+      select:focus,
+      textarea:focus {
+        outline: none;
+        border-color: #667eea;
+      }
+
+      textarea {
+        min-height: 100px;
+        resize: vertical;
+        font-family: "Courier New", monospace;
+      }
+
+      button {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        padding: 14px 28px;
+        border-radius: 8px;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: transform 0.2s;
+        width: 100%;
+      }
+
+      button:hover {
+        transform: translateY(-2px);
+      }
+
+      button:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+        transform: none;
+      }
+
+      .result {
+        margin-top: 30px;
+        padding: 20px;
+        border-radius: 8px;
+        display: none;
+      }
+
+      .result.success {
+        background: #f0fdf4;
+        border: 2px solid #22c55e;
+      }
+
+      .result.error {
+        background: #fef2f2;
+        border: 2px solid #ef4444;
+      }
+
+      .result h3 {
+        margin-bottom: 10px;
+        font-size: 18px;
+      }
+
+      .result.error h3 {
+        color: #dc2626;
+      }
+
+      .result.success h3 {
+        color: #16a34a;
+      }
+
+      .result pre {
+        background: #1e293b;
+        color: #e2e8f0;
+        padding: 15px;
+        border-radius: 6px;
+        overflow-x: auto;
+        margin-top: 10px;
+        font-size: 13px;
+        line-height: 1.5;
+      }
+
+      .result p {
+        margin: 10px 0;
+        line-height: 1.6;
+      }
+
+      .result strong {
+        color: #2d3748;
+      }
+
+      .info-box {
+        background: #f0f9ff;
+        border-left: 4px solid #3b82f6;
+        padding: 15px;
+        margin-bottom: 20px;
+        border-radius: 4px;
+      }
+
+      .info-box p {
+        color: #1e40af;
+        font-size: 14px;
+        line-height: 1.5;
+        margin: 5px 0;
+      }
+
+      .info-box a {
+        color: #2563eb;
+        text-decoration: none;
+        font-weight: 600;
+      }
+
+      .info-box a:hover {
+        text-decoration: underline;
+      }
+
+      .models-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 10px;
+        margin-top: 10px;
+      }
+
+      .model-chip {
+        background: #f3f4f6;
+        padding: 8px 12px;
+        border-radius: 6px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.2s;
+        border: 2px solid transparent;
+        font-size: 13px;
+        font-weight: 500;
+      }
+
+      .model-chip:hover {
+        border-color: #667eea;
+        background: #eef2ff;
+      }
+
+      .model-chip.recommended {
+        border-color: #22c55e;
+        background: #f0fdf4;
+      }
+
+      .model-chip.recommended::after {
+        content: " ⭐";
+      }
+
+      .loading {
+        display: inline-block;
+        width: 16px;
+        height: 16px;
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        border-top-color: white;
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+        margin-left: 10px;
+      }
+
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      .cost-info {
+        background: #fef3c7;
+        border-left: 4px solid #f59e0b;
+        padding: 12px;
+        margin-top: 15px;
+        border-radius: 4px;
+        font-size: 13px;
+        color: #92400e;
+      }
+
+      .model-info {
+        font-size: 12px;
+        color: #6b7280;
+        margin-top: 5px;
+      }
+
+      .section-title {
+        font-size: 18px;
+        font-weight: 600;
+        color: #2d3748;
+        margin: 30px 0 15px;
+        padding-bottom: 10px;
+        border-bottom: 2px solid #e2e8f0;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>🧪 AI Model Tester</h1>
+      <p class="subtitle">
+        Test Gemini and OpenAI models for your YouTube Notes extension
+      </p>
+
+      <div class="provider-tabs">
+        <button class="tab active" onclick="switchTab('gemini')">
+          Google Gemini
+        </button>
+        <button class="tab" onclick="switchTab('openai')">OpenAI</button>
+      </div>
+
+      <!-- GEMINI SECTION -->
+      <div id="gemini-section" class="provider-section active">
+        <div class="info-box">
+          <p>
+            <strong>Google Gemini 2.0 Flash</strong> - Recommended for YouTube
+            Notes
+          </p>
+          <p>
+            Get your free API key:
+            <a href="https://aistudio.google.com/app/apikey" target="_blank"
+              >Google AI Studio</a
+            >
+          </p>
+          <p>
+            ✅ <strong>Free tier:</strong> 15 requests/min • Perfect for 50
+            videos/month
+          </p>
+          <p>
+            💰 <strong>Cost:</strong> $0.10 per 1M input tokens, $0.40 per 1M
+            output tokens
+          </p>
+        </div>
+
+        <form onsubmit="testGemini(event)">
+          <div class="form-group">
+            <label for="gemini-api-key">Gemini API Key</label>
+            <input
+              type="text"
+              id="gemini-api-key"
+              placeholder="AIza..."
+              required
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="gemini-model">Model</label>
+            <div class="models-grid">
+              <div
+                class="model-chip recommended"
+                onclick="selectModel('gemini', 'gemini-2.0-flash')"
+              >
+                gemini-2.0-flash
+                <div class="model-info">Best value</div>
+              </div>
+              <div
+                class="model-chip"
+                onclick="selectModel('gemini', 'gemini-2.0-flash-lite')"
+              >
+                gemini-2.0-flash-lite
+                <div class="model-info">Cheapest</div>
+              </div>
+              <div
+                class="model-chip"
+                onclick="selectModel('gemini', 'gemini-1.5-flash')"
+              >
+                gemini-1.5-flash
+                <div class="model-info">Previous gen</div>
+              </div>
+              <div
+                class="model-chip"
+                onclick="selectModel('gemini', 'gemini-1.5-pro')"
+              >
+                gemini-1.5-pro
+                <div class="model-info">Most capable</div>
+              </div>
+            </div>
+            <input
+              type="text"
+              id="gemini-model"
+              value="gemini-2.0-flash"
+              required
+              style="margin-top: 10px"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="gemini-prompt">Test Prompt</label>
+            <textarea id="gemini-prompt" required>
+Summarize this in one sentence: Artificial intelligence is transforming how we work and live, offering unprecedented opportunities for innovation while raising important questions about ethics and society.</textarea
+            >
+          </div>
+
+          <button type="submit" id="gemini-submit-btn">
+            Test Gemini Model
+          </button>
+        </form>
+
+        <div id="gemini-result" class="result"></div>
+      </div>
+
+      <!-- OPENAI SECTION -->
+      <div id="openai-section" class="provider-section">
+        <div class="info-box">
+          <p><strong>OpenAI GPT-4o-mini</strong> - Best quality option</p>
+          <p>
+            Get your API key:
+            <a href="https://platform.openai.com/api-keys" target="_blank"
+              >OpenAI Platform</a
+            >
+          </p>
+          <p>⚠️ <strong>No free tier</strong> - Requires payment method</p>
+          <p>
+            💰 <strong>Cost:</strong> $0.15 per 1M input tokens, $0.60 per 1M
+            output tokens
+          </p>
+        </div>
+
+        <form onsubmit="testOpenAI(event)">
+          <div class="form-group">
+            <label for="openai-api-key">OpenAI API Key</label>
+            <input
+              type="text"
+              id="openai-api-key"
+              placeholder="sk-..."
+              required
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="openai-model">Model</label>
+            <div class="models-grid">
+              <div
+                class="model-chip recommended"
+                onclick="selectModel('openai', 'gpt-4o-mini')"
+              >
+                gpt-4o-mini
+                <div class="model-info">Best value</div>
+              </div>
+              <div class="model-chip" onclick="selectModel('openai', 'gpt-4o')">
+                gpt-4o
+                <div class="model-info">Most capable</div>
+              </div>
+              <div
+                class="model-chip"
+                onclick="selectModel('openai', 'gpt-3.5-turbo')"
+              >
+                gpt-3.5-turbo
+                <div class="model-info">Cheapest</div>
+              </div>
+            </div>
+            <input
+              type="text"
+              id="openai-model"
+              value="gpt-4o-mini"
+              required
+              style="margin-top: 10px"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="openai-prompt">Test Prompt</label>
+            <textarea id="openai-prompt" required>
+Summarize this in one sentence: Artificial intelligence is transforming how we work and live, offering unprecedented opportunities for innovation while raising important questions about ethics and society.</textarea
+            >
+          </div>
+
+          <button type="submit" id="openai-submit-btn">
+            Test OpenAI Model
+          </button>
+        </form>
+
+        <div id="openai-result" class="result"></div>
+      </div>
+
+      <div class="info-box" style="margin-top: 30px">
+        <p><strong>How to use:</strong></p>
+        <p>1. Get your API key from the provider (links above)</p>
+        <p>2. Select a model or type a model name</p>
+        <p>3. Click "Test Model"</p>
+        <p>
+          4. If successful, use this API key in your YouTube Notes extension
+        </p>
+        <p>
+          5. If you get an error, try a different model or check your API key
+        </p>
+      </div>
+    </div>
+
+    <script>
+      function switchTab(provider) {
+        // Update tabs
+        document
+          .querySelectorAll(".tab")
+          .forEach((tab) => tab.classList.remove("active"));
+        event.target.classList.add("active");
+
+        // Update sections
+        document
+          .querySelectorAll(".provider-section")
+          .forEach((section) => section.classList.remove("active"));
+        document.getElementById(`${provider}-section`).classList.add("active");
+      }
+
+      function selectModel(provider, modelName) {
+        document.getElementById(`${provider}-model`).value = modelName;
+      }
+
+      async function testGemini(event) {
+        event.preventDefault();
+
+        const apiKey = document.getElementById("gemini-api-key").value.trim();
+        const model = document.getElementById("gemini-model").value.trim();
+        const testPrompt = document
+          .getElementById("gemini-prompt")
+          .value.trim();
+        const submitBtn = document.getElementById("gemini-submit-btn");
+        const resultDiv = document.getElementById("gemini-result");
+
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = 'Testing <span class="loading"></span>';
+        resultDiv.style.display = "none";
+
+        try {
+          const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+
+          const response = await fetch(endpoint, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              contents: [
+                {
+                  parts: [
+                    {
+                      text: testPrompt,
+                    },
+                  ],
+                },
+              ],
+              generationConfig: {
+                temperature: 0.7,
+                maxOutputTokens: 2048,
+              },
+            }),
+          });
+
+          const data = await response.json();
+
+          resultDiv.className = "result";
+          resultDiv.style.display = "block";
+
+          if (!response.ok) {
+            resultDiv.classList.add("error");
+            resultDiv.innerHTML = `
+            <h3>❌ Error (${response.status})</h3>
+            <p><strong>Error Message:</strong> ${
+              data.error?.message || "Unknown error"
+            }</p>
+            ${
+              data.error?.status
+                ? `<p><strong>Status:</strong> ${data.error.status}</p>`
+                : ""
+            }
+            <p><strong>Suggestion:</strong> ${getSuggestion(
+              data.error?.status || data.error?.message
+            )}</p>
+            <pre>${JSON.stringify(data, null, 2)}</pre>
+          `;
+          } else {
+            const responseText =
+              data.candidates?.[0]?.content?.parts?.[0]?.text || "No response";
+            const tokensUsed = data.usageMetadata || {};
+
+            resultDiv.classList.add("success");
+            resultDiv.innerHTML = `
+            <h3>✅ Success!</h3>
+            <p><strong>Model:</strong> ${model}</p>
+            <p><strong>Response:</strong></p>
+            <pre>${responseText}</pre>
+            ${
+              tokensUsed.promptTokenCount
+                ? `
+              <div class="cost-info">
+                📊 <strong>Token Usage:</strong> ${
+                  tokensUsed.promptTokenCount || 0
+                } input, ${tokensUsed.candidatesTokenCount || 0} output
+                <br>💰 <strong>Estimated Cost:</strong> $${calculateGeminiCost(
+                  tokensUsed.promptTokenCount,
+                  tokensUsed.candidatesTokenCount
+                )}
+              </div>
+            `
+                : ""
+            }
+            <p style="margin-top: 15px; color: #16a34a; font-weight: 600;">
+              ✓ This model works! You can use this API key in your extension.
+            </p>
+          `;
+          }
+        } catch (error) {
+          resultDiv.className = "result error";
+          resultDiv.style.display = "block";
+          resultDiv.innerHTML = `
+          <h3>❌ Network Error</h3>
+          <p>${error.message}</p>
+          <p><strong>Suggestion:</strong> Check your internet connection and API key format</p>
+        `;
+        } finally {
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = "Test Gemini Model";
+        }
+      }
+
+      async function testOpenAI(event) {
+        event.preventDefault();
+
+        const apiKey = document.getElementById("openai-api-key").value.trim();
+        const model = document.getElementById("openai-model").value.trim();
+        const testPrompt = document
+          .getElementById("openai-prompt")
+          .value.trim();
+        const submitBtn = document.getElementById("openai-submit-btn");
+        const resultDiv = document.getElementById("openai-result");
+
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = 'Testing <span class="loading"></span>';
+        resultDiv.style.display = "none";
+
+        try {
+          const response = await fetch(
+            "https://api.openai.com/v1/chat/completions",
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${apiKey}`,
+              },
+              body: JSON.stringify({
+                model: model,
+                messages: [
+                  {
+                    role: "system",
+                    content: "You are a helpful assistant.",
+                  },
+                  {
+                    role: "user",
+                    content: testPrompt,
+                  },
+                ],
+                temperature: 0.7,
+                max_tokens: 2048,
+              }),
+            }
+          );
+
+          const data = await response.json();
+
+          resultDiv.className = "result";
+          resultDiv.style.display = "block";
+
+          if (!response.ok) {
+            resultDiv.classList.add("error");
+            resultDiv.innerHTML = `
+            <h3>❌ Error (${response.status})</h3>
+            <p><strong>Error Message:</strong> ${
+              data.error?.message || "Unknown error"
+            }</p>
+            ${
+              data.error?.type
+                ? `<p><strong>Type:</strong> ${data.error.type}</p>`
+                : ""
+            }
+            <p><strong>Suggestion:</strong> ${getSuggestion(
+              data.error?.type || data.error?.message
+            )}</p>
+            <pre>${JSON.stringify(data, null, 2)}</pre>
+          `;
+          } else {
+            const responseText =
+              data.choices?.[0]?.message?.content || "No response";
+            const tokensUsed = data.usage || {};
+
+            resultDiv.classList.add("success");
+            resultDiv.innerHTML = `
+            <h3>✅ Success!</h3>
+            <p><strong>Model:</strong> ${model}</p>
+            <p><strong>Response:</strong></p>
+            <pre>${responseText}</pre>
+            ${
+              tokensUsed.prompt_tokens
+                ? `
+              <div class="cost-info">
+                📊 <strong>Token Usage:</strong> ${
+                  tokensUsed.prompt_tokens || 0
+                } input, ${tokensUsed.completion_tokens || 0} output
+                <br>💰 <strong>Estimated Cost:</strong> $${calculateOpenAICost(
+                  model,
+                  tokensUsed.prompt_tokens,
+                  tokensUsed.completion_tokens
+                )}
+              </div>
+            `
+                : ""
+            }
+            <p style="margin-top: 15px; color: #16a34a; font-weight: 600;">
+              ✓ This model works! You can use this API key in your extension.
+            </p>
+          `;
+          }
+        } catch (error) {
+          resultDiv.className = "result error";
+          resultDiv.style.display = "block";
+          resultDiv.innerHTML = `
+          <h3>❌ Network Error</h3>
+          <p>${error.message}</p>
+          <p><strong>Suggestion:</strong> Check your internet connection and API key format</p>
+        `;
+        } finally {
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = "Test OpenAI Model";
+        }
+      }
+
+      function getSuggestion(errorInfo) {
+        const errorStr = String(errorInfo).toLowerCase();
+
+        if (
+          errorStr.includes("invalid") ||
+          errorStr.includes("api_key") ||
+          errorStr.includes("authentication")
+        ) {
+          return "Your API key is invalid. Generate a new one from the provider.";
+        }
+        if (
+          errorStr.includes("quota") ||
+          errorStr.includes("insufficient") ||
+          errorStr.includes("billing")
+        ) {
+          return "You have exceeded your quota or need to add payment method.";
+        }
+        if (errorStr.includes("rate") || errorStr.includes("limit")) {
+          return "You are being rate limited. Wait a moment and try again.";
+        }
+        if (errorStr.includes("not_found") || errorStr.includes("model")) {
+          return "This model does not exist or is not available with your API key.";
+        }
+        if (errorStr.includes("permission")) {
+          return "Your API key does not have permission to use this model.";
+        }
+
+        return "Try a different model or check your API key permissions.";
+      }
+
+      function calculateGeminiCost(inputTokens, outputTokens) {
+        const inputCost = (inputTokens / 1000000) * 0.1;
+        const outputCost = (outputTokens / 1000000) * 0.4;
+        return (inputCost + outputCost).toFixed(6);
+      }
+
+      function calculateOpenAICost(model, inputTokens, outputTokens) {
+        let inputRate = 0.15;
+        let outputRate = 0.6;
+
+        if (model.includes("gpt-4o-mini")) {
+          inputRate = 0.15;
+          outputRate = 0.6;
+        } else if (model.includes("gpt-4o")) {
+          inputRate = 2.5;
+          outputRate = 10.0;
+        } else if (model.includes("gpt-3.5")) {
+          inputRate = 0.5;
+          outputRate = 1.5;
+        }
+
+        const inputCost = (inputTokens / 1000000) * inputRate;
+        const outputCost = (outputTokens / 1000000) * outputRate;
+        return (inputCost + outputCost).toFixed(6);
+      }
+    </script>
+  </body>
+</html>

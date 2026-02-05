@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>YouTube Notes Library</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: Roboto, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #f9f9f9;
+      color: #0f0f0f;
+      line-height: 1.6;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 40px 20px;
+    }
+
+    header {
+      margin-bottom: 40px;
+    }
+
+    h1 {
+      font-size: 32px;
+      font-weight: 600;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    h1 svg {
+      width: 32px;
+      height: 32px;
+      fill: #ff0000;
+    }
+
+    .subtitle {
+      font-size: 16px;
+      color: #606060;
+    }
+
+    .controls {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 32px;
+      flex-wrap: wrap;
+    }
+
+    .search-box {
+      flex: 1;
+      min-width: 300px;
+      padding: 12px 16px;
+      border: 2px solid #e5e5e5;
+      border-radius: 8px;
+      font-size: 14px;
+      transition: border-color 0.2s;
+    }
+
+    .search-box:focus {
+      outline: none;
+      border-color: #ff0000;
+    }
+
+    .sort-select {
+      padding: 12px 16px;
+      border: 2px solid #e5e5e5;
+      border-radius: 8px;
+      font-size: 14px;
+      background: white;
+      cursor: pointer;
+    }
+
+    .stats {
+      padding: 16px;
+      background: white;
+      border-radius: 8px;
+      margin-bottom: 24px;
+      display: flex;
+      gap: 24px;
+      border: 1px solid #e5e5e5;
+    }
+
+    .stat-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .stat-item svg {
+      width: 20px;
+      height: 20px;
+      fill: #606060;
+    }
+
+    .stat-value {
+      font-size: 20px;
+      font-weight: 600;
+      color: #0f0f0f;
+    }
+
+    .stat-label {
+      font-size: 14px;
+      color: #606060;
+    }
+
+    .notes-grid {
+      display: grid;
+      gap: 24px;
+    }
+
+    .note-card {
+      background: white;
+      border: 1px solid #e5e5e5;
+      border-radius: 12px;
+      padding: 24px;
+      transition: all 0.2s;
+      cursor: pointer;
+    }
+
+    .note-card:hover {
+      border-color: #cccccc;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+      transform: translateY(-2px);
+    }
+
+    .note-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 16px;
+      gap: 16px;
+    }
+
+    .note-title {
+      font-size: 18px;
+      font-weight: 600;
+      color: #0f0f0f;
+      flex: 1;
+      line-height: 1.4;
+    }
+
+    .note-date {
+      font-size: 13px;
+      color: #909090;
+      white-space: nowrap;
+    }
+
+    .note-preview {
+      font-size: 14px;
+      color: #606060;
+      line-height: 1.6;
+      margin-bottom: 16px;
+      max-height: 100px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .note-preview::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 30px;
+      background: linear-gradient(transparent, white);
+    }
+
+    .note-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      padding: 8px 16px;
+      border: none;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .btn svg {
+      width: 16px;
+      height: 16px;
+      fill: currentColor;
+    }
+
+    .btn-primary {
+      background: #ff0000;
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: #cc0000;
+    }
+
+    .btn-secondary {
+      background: #f1f1f1;
+      color: #0f0f0f;
+    }
+
+    .btn-secondary:hover {
+      background: #e5e5e5;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 80px 20px;
+    }
+
+    .empty-icon {
+      width: 80px;
+      height: 80px;
+      margin: 0 auto 24px;
+      opacity: 0.3;
+    }
+
+    .empty-title {
+      font-size: 24px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .empty-description {
+      font-size: 16px;
+      color: #606060;
+    }
+
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 1000;
+      padding: 40px 20px;
+      overflow-y: auto;
+    }
+
+    .modal.active {
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+    }
+
+    .modal-content {
+      background: white;
+      border-radius: 12px;
+      padding: 32px;
+      max-width: 800px;
+      width: 100%;
+      margin: auto;
+      position: relative;
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 24px;
+      gap: 16px;
+    }
+
+    .modal-title {
+      font-size: 24px;
+      font-weight: 600;
+      flex: 1;
+    }
+
+    .modal-close {
+      width: 32px;
+      height: 32px;
+      padding: 0;
+      background: #f1f1f1;
+      border: none;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.2s;
+    }
+
+    .modal-close:hover {
+      background: #e5e5e5;
+    }
+
+    .modal-close svg {
+      width: 20px;
+      height: 20px;
+      fill: #0f0f0f;
+    }
+
+    .modal-body {
+      line-height: 1.6;
+    }
+
+    .modal-body h1,
+    .modal-body h2,
+    .modal-body h3 {
+      margin-top: 24px;
+      margin-bottom: 12px;
+      font-weight: 600;
+    }
+
+    .modal-body h1 {
+      font-size: 24px;
+      padding-bottom: 8px;
+      border-bottom: 2px solid #e5e5e5;
+    }
+
+    .modal-body h2 {
+      font-size: 20px;
+    }
+
+    .modal-body h3 {
+      font-size: 16px;
+    }
+
+    .modal-body ul,
+    .modal-body ol {
+      margin: 16px 0;
+      padding-left: 24px;
+    }
+
+    .modal-body li {
+      margin-bottom: 8px;
+    }
+
+    .modal-body strong {
+      font-weight: 600;
+    }
+
+    .modal-body code {
+      background: #f1f1f1;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-family: 'Courier New', monospace;
+      font-size: 13px;
+    }
+
+    .modal-body blockquote {
+      border-left: 3px solid #ff0000;
+      padding-left: 16px;
+      margin: 16px 0;
+      color: #606060;
+      font-style: italic;
+    }
+
+    @media (max-width: 768px) {
+      .container {
+        padding: 20px 16px;
+      }
+
+      h1 {
+        font-size: 24px;
+      }
+
+      .controls {
+        flex-direction: column;
+      }
+
+      .search-box {
+        min-width: 100%;
+      }
+
+      .stats {
+        flex-direction: column;
+        gap: 12px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>
+        <svg viewBox="0 0 24 24">
+          <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z"/>
+        </svg>
+        YouTube Notes Library
+      </h1>
+      <p class="subtitle">All your video notes in one place</p>
+    </header>
+
+    <div class="controls">
+      <input 
+        type="text" 
+        class="search-box" 
+        id="search-input" 
+        placeholder="Search notes by video title or content..."
+      >
+      <select class="sort-select" id="sort-select">
+        <option value="newest">Newest First</option>
+        <option value="oldest">Oldest First</option>
+        <option value="title">Title A-Z</option>
+      </select>
+    </div>
+
+    <div class="stats" id="stats">
+      <div class="stat-item">
+        <svg viewBox="0 0 24 24">
+          <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z"/>
+        </svg>
+        <div>
+          <div class="stat-value" id="total-notes">0</div>
+          <div class="stat-label">Total Notes</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="notes-grid" id="notes-grid">
+      <!-- Notes will be inserted here -->
+    </div>
+  </div>
+
+  <!-- Modal for viewing full notes -->
+  <div class="modal" id="note-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 class="modal-title" id="modal-title">Note Title</h2>
+        <button class="modal-close" onclick="closeModal()">
+          <svg viewBox="0 0 24 24">
+            <path d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z"/>
+          </svg>
+        </button>
+      </div>
+      <div class="modal-body" id="modal-body">
+        <!-- Note content will be inserted here -->
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let allNotes = [];
+    let filteredNotes = [];
+
+    // Load all notes from storage
+    async function loadNotes() {
+      chrome.storage.local.get(['youtube_video_notes'], (result) => {
+        const notesData = result.youtube_video_notes || {};
+        allNotes = Object.values(notesData).sort((a, b) => 
+          new Date(b.updatedAt) - new Date(a.updatedAt)
+        );
+        filteredNotes = [...allNotes];
+        renderNotes();
+        updateStats();
+      });
+    }
+
+    // Render notes grid
+    function renderNotes() {
+      const grid = document.getElementById('notes-grid');
+      
+      if (filteredNotes.length === 0) {
+        grid.innerHTML = `
+          <div class="empty-state">
+            <svg class="empty-icon" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z"/>
+            </svg>
+            <div class="empty-title">No notes yet</div>
+            <div class="empty-description">Start generating notes from YouTube videos</div>
+          </div>
+        `;
+        return;
+      }
+
+      grid.innerHTML = filteredNotes.map(note => `
+        <div class="note-card" onclick="viewNote('${note.videoId}')">
+          <div class="note-header">
+            <div class="note-title">${escapeHtml(note.title)}</div>
+            <div class="note-date">${formatDate(note.updatedAt)}</div>
+          </div>
+          <div class="note-preview">
+            ${escapeHtml(getPreview(note.notes))}
+          </div>
+          <div class="note-actions" onclick="event.stopPropagation()">
+            <button class="btn btn-primary" onclick="openVideo('${note.url}')">
+              <svg viewBox="0 0 24 24">
+                <path d="M10,16.5V7.5L16,12M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2Z"/>
+              </svg>
+              Watch Video
+            </button>
+            <button class="btn btn-secondary" onclick="copyNotes('${note.videoId}')">
+              <svg viewBox="0 0 24 24">
+                <path d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"/>
+              </svg>
+              Copy
+            </button>
+            <button class="btn btn-secondary" onclick="downloadNotes('${note.videoId}')">
+              <svg viewBox="0 0 24 24">
+                <path d="M5,20H19V18H5M19,9H15V3H9V9H5L12,16L19,9Z"/>
+              </svg>
+              Download
+            </button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    // Update statistics
+    function updateStats() {
+      document.getElementById('total-notes').textContent = allNotes.length;
+    }
+
+    // Search functionality
+    document.getElementById('search-input').addEventListener('input', (e) => {
+      const query = e.target.value.toLowerCase();
+      filteredNotes = allNotes.filter(note => 
+        note.title.toLowerCase().includes(query) ||
+        note.notes.toLowerCase().includes(query)
+      );
+      renderNotes();
+    });
+
+    // Sort functionality
+    document.getElementById('sort-select').addEventListener('change', (e) => {
+      const sortBy = e.target.value;
+      
+      if (sortBy === 'newest') {
+        filteredNotes.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
+      } else if (sortBy === 'oldest') {
+        filteredNotes.sort((a, b) => new Date(a.updatedAt) - new Date(b.updatedAt));
+      } else if (sortBy === 'title') {
+        filteredNotes.sort((a, b) => a.title.localeCompare(b.title));
+      }
+      
+      renderNotes();
+    });
+
+    // View note in modal
+    function viewNote(videoId) {
+      const note = allNotes.find(n => n.videoId === videoId);
+      if (!note) return;
+
+      document.getElementById('modal-title').textContent = note.title;
+      document.getElementById('modal-body').innerHTML = renderMarkdown(note.notes);
+      document.getElementById('note-modal').classList.add('active');
+    }
+
+    // Close modal
+    function closeModal() {
+      document.getElementById('note-modal').classList.remove('active');
+    }
+
+    // Open video in new tab
+    function openVideo(url) {
+      window.open(url, '_blank');
+    }
+
+    // Copy notes to clipboard
+    function copyNotes(videoId) {
+      const note = allNotes.find(n => n.videoId === videoId);
+      if (!note) return;
+
+      navigator.clipboard.writeText(note.notes).then(() => {
+        alert('Notes copied to clipboard!');
+      });
+    }
+
+    // Download notes as markdown
+    function downloadNotes(videoId) {
+      const note = allNotes.find(n => n.videoId === videoId);
+      if (!note) return;
+
+      const blob = new Blob([note.notes], { type: 'text/markdown' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${note.title}.md`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    // Utility functions
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    function getPreview(text) {
+      return text.substring(0, 200) + '...';
+    }
+
+    function formatDate(dateString) {
+      const date = new Date(dateString);
+      const now = new Date();
+      const diff = now - date;
+      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+
+      if (days === 0) return 'Today';
+      if (days === 1) return 'Yesterday';
+      if (days < 7) return `${days} days ago`;
+      
+      return date.toLocaleDateString('en-US', { 
+        month: 'short', 
+        day: 'numeric', 
+        year: date.getFullYear() !== now.getFullYear() ? 'numeric' : undefined 
+      });
+    }
+
+    function renderMarkdown(text) {
+      let html = text
+        .replace(/^### (.*$)/gim, '<h3>$1</h3>')
+        .replace(/^## (.*$)/gim, '<h2>$1</h2>')
+        .replace(/^# (.*$)/gim, '<h1>$1</h1>')
+        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+        .replace(/(?<!\*)\*(?!\*)([^*]+)\*(?!\*)/g, '<em>$1</em>')
+        .replace(/`(.*?)`/g, '<code>$1</code>')
+        .replace(/^> (.*$)/gim, '<blockquote>$1</blockquote>')
+        .replace(/^[\*\-] (.*$)/gim, '<li>$1</li>')
+        .replace(/^(\d+)\. (.*$)/gim, '<li>$2</li>')
+        .replace(/\n\n/g, '</p><p>')
+        .replace(/\n/g, '<br>');
+
+      html = html.replace(/(<li>.*?<\/li>(?:\s*<br>\s*<li>.*?<\/li>)*)/gs, '<ul>$1</ul>');
+      html = html.replace(/<\/li>\s*<br>\s*<li>/g, '</li><li>');
+
+      if (!html.startsWith('<')) {
+        html = `<p>${html}</p>`;
+      }
+
+      return html;
+    }
+
+    // Close modal on escape key
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        closeModal();
+      }
+    });
+
+    // Close modal on background click
+    document.getElementById('note-modal').addEventListener('click', (e) => {
+      if (e.target.id === 'note-modal') {
+        closeModal();
+      }
+    });
+
+    // Initialize
+    loadNotes();
+  </script>
+</body>
+</html>
