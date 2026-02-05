@@ -4,6 +4,17 @@ let allNotes = [];
 let filteredNotes = [];
 let activeNoteId = null;
 
+function getNoteDepth(note) {
+  return note.activeDepth || note.reportDepth || (note.notesBrief ? 'brief' : 'detailed');
+}
+
+function getNoteContent(note, depth) {
+  if (depth === 'detailed') {
+    return note.notesDetailed || '';
+  }
+  return note.notesBrief || note.notes || '';
+}
+
 // ==================== DARK MODE ====================
 const darkModeToggle = document.getElementById('darkModeToggle');
 const themeKey = 'notesLibraryTheme';
@@ -78,7 +89,7 @@ function renderNotes() {
         <div class="note-date">${formatDate(note.updatedAt)}</div>
       </div>
       <div class="note-preview">
-        ${escapeHtml(getPreview(note.notes))}
+        ${escapeHtml(getPreview(getNoteContent(note, getNoteDepth(note))))}
       </div>
       <div class="note-actions">
         <button class="btn btn-primary" data-action="open-video" data-url="${note.url}">
@@ -172,6 +183,127 @@ if (sortSelect) {
   });
 }
 
+// Export / Import
+const exportBtn = document.getElementById('export-notes-btn');
+const importBtn = document.getElementById('import-notes-btn');
+const importFileInput = document.getElementById('import-file-input');
+
+function sanitizeFilename(name) {
+  return (name || 'untitled')
+    .replace(/[<>:"/\\|?*\x00-\x1F]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .substring(0, 80);
+}
+
+function formatDateFolder(dateString) {
+  const date = new Date(dateString || Date.now());
+  const yyyy = date.getFullYear();
+  const mm = String(date.getMonth() + 1).padStart(2, '0');
+  const dd = String(date.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
+}
+
+async function exportNotesZip() {
+  const zip = new JSZip();
+  const metadata = {
+    exportedAt: new Date().toISOString(),
+    totalNotes: allNotes.length,
+    notes: allNotes
+  };
+  zip.file('metadata.json', JSON.stringify(metadata, null, 2));
+
+  allNotes.forEach((note) => {
+    const folder = zip.folder(formatDateFolder(note.updatedAt));
+    const title = sanitizeFilename(note.title || note.videoId);
+    const briefContent = getNoteContent(note, 'brief');
+    const detailedContent = getNoteContent(note, 'detailed');
+    if (briefContent) {
+      folder.file(`${title}-brief.md`, briefContent);
+    }
+    if (detailedContent) {
+      folder.file(`${title}-detailed.md`, detailedContent);
+    }
+  });
+
+  const blob = await zip.generateAsync({ type: 'blob' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `youtube-notes-${new Date().toISOString().slice(0, 10)}.zip`;
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('Export complete', 'success');
+}
+
+function mergeNotes(existing, incoming) {
+  const merged = { ...existing };
+  Object.keys(incoming).forEach((key) => {
+    merged[key] = incoming[key];
+  });
+  return merged;
+}
+
+async function importNotesFile(file) {
+  if (!file) return;
+  if (file.name.endsWith('.json')) {
+    const text = await file.text();
+    const data = JSON.parse(text);
+    const notesData = data.notes || data.youtube_video_notes || data;
+    chrome.storage.local.get(['youtube_video_notes'], (result) => {
+      const existing = result.youtube_video_notes || {};
+      const merged = mergeNotes(existing, notesData);
+      chrome.storage.local.set({ youtube_video_notes: merged }, () => {
+        showToast('Import complete', 'success');
+        loadNotes();
+      });
+    });
+    return;
+  }
+
+  if (file.name.endsWith('.zip')) {
+    const zip = await JSZip.loadAsync(file);
+    let notesData = null;
+    if (zip.file('metadata.json')) {
+      const metaText = await zip.file('metadata.json').async('string');
+      const meta = JSON.parse(metaText);
+      if (meta && Array.isArray(meta.notes)) {
+        notesData = {};
+        meta.notes.forEach((note) => {
+          if (note.videoId) {
+            notesData[note.videoId] = note;
+          }
+        });
+      }
+    }
+    if (!notesData) {
+      showToast('Invalid zip format', 'error');
+      return;
+    }
+    chrome.storage.local.get(['youtube_video_notes'], (result) => {
+      const existing = result.youtube_video_notes || {};
+      const merged = mergeNotes(existing, notesData);
+      chrome.storage.local.set({ youtube_video_notes: merged }, () => {
+        showToast('Import complete', 'success');
+        loadNotes();
+      });
+    });
+  }
+}
+
+if (exportBtn) {
+  exportBtn.addEventListener('click', exportNotesZip);
+}
+
+if (importBtn && importFileInput) {
+  importBtn.addEventListener('click', () => importFileInput.click());
+  importFileInput.addEventListener('change', (e) => {
+    const file = e.target.files && e.target.files[0];
+    importNotesFile(file);
+    importFileInput.value = '';
+  });
+}
+
 // View note in modal
 function viewNote(videoId) {
   const note = allNotes.find(n => n.videoId === videoId);
@@ -182,15 +314,17 @@ function viewNote(videoId) {
   const modalEditor = document.getElementById('modal-editor');
   const modalDepthSelect = document.getElementById('modal-depth-select');
   const noteModal = document.getElementById('note-modal');
+  const depth = getNoteDepth(note);
+  const content = getNoteContent(note, depth);
 
   if (modalTitle) modalTitle.textContent = note.title;
-  if (modalBody) modalBody.innerHTML = renderMarkdown(note.notes);
+  if (modalBody) modalBody.innerHTML = renderMarkdown(content);
   if (modalEditor) {
-    modalEditor.value = note.notes;
+    modalEditor.value = content;
     modalEditor.style.display = 'none';
   }
   if (modalDepthSelect) {
-    modalDepthSelect.value = note.reportDepth || 'brief';
+    modalDepthSelect.value = depth;
   }
   setModalEditState(false);
   if (noteModal) noteModal.classList.add('active');
@@ -247,15 +381,23 @@ if (modalSaveBtn) {
     const updatedNotes = modalEditor ? modalEditor.value : '';
     const note = allNotes.find(n => n.videoId === activeNoteId);
     if (!note) return;
+    const depth = getNoteDepth(note);
 
     chrome.storage.local.get(['youtube_video_notes'], (result) => {
       const notesData = result.youtube_video_notes || {};
       if (!notesData[activeNoteId]) return;
-      notesData[activeNoteId].notes = updatedNotes;
-      notesData[activeNoteId].reportDepth = note.reportDepth || 'brief';
+      if (depth === 'detailed') {
+        notesData[activeNoteId].notesDetailed = updatedNotes;
+        note.notesDetailed = updatedNotes;
+      } else {
+        notesData[activeNoteId].notesBrief = updatedNotes;
+        notesData[activeNoteId].notes = updatedNotes;
+        note.notesBrief = updatedNotes;
+      }
+      notesData[activeNoteId].activeDepth = depth;
+      note.activeDepth = depth;
       notesData[activeNoteId].updatedAt = new Date().toISOString();
       chrome.storage.local.set({ youtube_video_notes: notesData }, () => {
-        note.notes = updatedNotes;
         note.updatedAt = notesData[activeNoteId].updatedAt;
         renderNotes();
         updateStats();
@@ -274,11 +416,16 @@ if (modalDepthSelect) {
     const depth = event.target.value;
     const note = allNotes.find(n => n.videoId === activeNoteId);
     if (!note) return;
-    note.reportDepth = depth;
+    note.activeDepth = depth;
+    const content = getNoteContent(note, depth);
+    const modalBody = document.getElementById('modal-body');
+    const modalEditor = document.getElementById('modal-editor');
+    if (modalBody) modalBody.innerHTML = renderMarkdown(content);
+    if (modalEditor) modalEditor.value = content;
     chrome.storage.local.get(['youtube_video_notes'], (result) => {
       const notesData = result.youtube_video_notes || {};
       if (!notesData[activeNoteId]) return;
-      notesData[activeNoteId].reportDepth = depth;
+      notesData[activeNoteId].activeDepth = depth;
       chrome.storage.local.set({ youtube_video_notes: notesData }, () => {
         showToast('Depth updated', 'success');
       });
@@ -296,7 +443,10 @@ function copyNotes(videoId) {
   const note = allNotes.find(n => n.videoId === videoId);
   if (!note) return;
 
-  navigator.clipboard.writeText(note.notes).then(() => {
+  const depth = getNoteDepth(note);
+  const content = getNoteContent(note, depth);
+
+  navigator.clipboard.writeText(content).then(() => {
     showToast('Notes copied to clipboard!', 'success');
   }).catch(() => {
     showToast('Failed to copy notes', 'error');
@@ -308,11 +458,13 @@ function downloadNotes(videoId) {
   const note = allNotes.find(n => n.videoId === videoId);
   if (!note) return;
 
-  const blob = new Blob([note.notes], { type: 'text/markdown' });
+  const depth = getNoteDepth(note);
+  const content = getNoteContent(note, depth);
+  const blob = new Blob([content], { type: 'text/markdown' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = `${note.title}.md`;
+  a.download = `${note.title}-${depth}.md`;
   a.click();
   URL.revokeObjectURL(url);
 
@@ -358,7 +510,9 @@ function escapeHtml(text) {
 }
 
 function getPreview(text) {
-  return text.substring(0, 200) + '...';
+  const safeText = text || '';
+  if (!safeText) return 'No notes yet...';
+  return safeText.substring(0, 200) + '...';
 }
 
 function formatDate(dateString) {

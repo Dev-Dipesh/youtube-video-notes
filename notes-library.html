@@ -147,6 +147,42 @@
       color: #f1f1f1;
     }
 
+    .controls-right {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .controls-btn {
+      padding: 10px 14px;
+      border-radius: 8px;
+      border: 2px solid #e5e5e5;
+      background: white;
+      color: #0f0f0f;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .controls-btn:hover {
+      border-color: #ff0000;
+      transform: translateY(-1px);
+    }
+
+    body.dark-mode .controls-btn {
+      background: #1f1f1f;
+      border-color: #303030;
+      color: #f1f1f1;
+    }
+
+    body.dark-mode .controls-btn:hover {
+      border-color: #ff0000;
+    }
+
     .stats {
       padding: 16px;
       background: white;
@@ -592,6 +628,11 @@
         flex-direction: column;
       }
 
+      .controls-right {
+        width: 100%;
+        justify-content: flex-start;
+      }
+
       .search-box {
         min-width: 100%;
       }
@@ -634,6 +675,15 @@
         <option value="oldest">Oldest First</option>
         <option value="title">Title A-Z</option>
       </select>
+      <div class="controls-right">
+        <button class="controls-btn" id="export-notes-btn">
+          Export
+        </button>
+        <button class="controls-btn" id="import-notes-btn">
+          Import
+        </button>
+        <input type="file" id="import-file-input" accept=".zip,.json" style="display:none;">
+      </div>
     </div>
 
     <div class="stats" id="stats">
@@ -680,6 +730,7 @@
     </div>
   </div>
 
+  <script src="jszip.min.js"></script>
   <script src="notes-library.js"></script>
 </body>
 </html>

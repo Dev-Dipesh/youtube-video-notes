@@ -1,27 +1,24 @@
 # YouTube Video Notes Extension
 
-A Chrome extension that generates McKinsey-style MECE (Mutually Exclusive, Collectively Exhaustive) notes from YouTube video transcripts using Z.AI's GLM-4.7 model.
+A Chrome extension that generates McKinsey-style MECE (Mutually Exclusive, Collectively Exhaustive) reports from YouTube video transcripts using Google Gemini.
 
 ## Features
 
-- **AI-Powered Summaries**: Uses Z.AI's GLM-4.7 model to generate high-quality, executive-level notes
-- **McKinsey-Style Format**: Produces MECE notes with:
-  - Executive Summary
-  - Key Themes
-  - Critical Insights
-  - Notable Quotes
-  - Recommendations
+- **AI-Powered Reports**: Uses Gemini to generate high-signal, executive-level notes
+- **Report Depth**: Brief and Detailed versions stored side-by-side
+- **McKinsey-Style Format**: Executive Summary, Key Themes, Critical Insights, Notable Quotes, Recommendations
 - **Transcript Extraction**: Automatically extracts video transcripts from YouTube
-- **Persistent Storage**: Notes are saved locally with video metadata (title, URL, date)
+- **Notes Library**: Browse all notes in a separate tab with search/sort
+- **Export & Import**: Export as ZIP (dated folders + metadata) and import from ZIP/JSON
 - **Edit & Copy**: Edit generated notes and copy to clipboard
 - **Privacy-First**: All data stored locally, API key stored securely
-- **YouTube-Native UI**: Dark theme panel that matches YouTube's design
+- **YouTube-Native UI**: Panel styling matches YouTube and respects dark mode
 
 ## Installation
 
 ### Prerequisites
 
-1. **Z.AI API Key**: Get your API key from [Z.AI](https://z.ai)
+1. **Gemini API Key**: Get your API key from Google AI Studio
 2. **Chrome Browser**: Extension requires Chrome or Chromium-based browser
 
 ### Manual Installation
@@ -52,7 +49,7 @@ This creates a zip file in `dist/` ready for Chrome Web Store upload.
 1. Navigate to any YouTube video (e.g., `https://www.youtube.com/watch?v=xxxxx`)
 2. A "Video Notes" panel will appear on the right side
 3. Click "Generate Notes"
-4. You'll be prompted to enter your Z.AI API key
+4. You'll be prompted to enter your Gemini API key
 5. The extension will securely store your API key for future use
 
 ### Generating Notes
@@ -61,16 +58,23 @@ This creates a zip file in `dist/` ready for Chrome Web Store upload.
 2. Click "Generate Notes" in the panel
 3. The extension will:
    - Extract the video transcript
-   - Send it to Z.AI's GLM-4.7 model
-   - Display the generated McKinsey-style notes
+   - Send it to Gemini
+   - Display the generated report
 4. Notes are automatically saved for future reference
+
+**Tip**: If "Detailed" is selected, the extension will generate Brief first (if missing) and then Detailed, so both are available.
 
 ### Managing Notes
 
 - **Copy**: Click "Copy" to copy notes to clipboard
 - **Edit**: Click "Edit" to modify notes (changes are auto-saved)
 - **View Later**: Notes persist across browser sessions
-- **Re-generate**: Click "Generate Notes" again to create new notes
+- **Re-generate**: Click "Regenerate" to refresh the currently selected depth
+
+### Export & Import
+
+- **Export**: Creates a ZIP with dated folders and `metadata.json` for full restore
+- **Import**: Supports ZIP exports and raw JSON dumps of `youtube_video_notes`
 
 ## Architecture
 
@@ -78,7 +82,9 @@ This creates a zip file in `dist/` ready for Chrome Web Store upload.
 
 - `manifest.json` - Extension configuration and permissions
 - `content.js` - Main logic (transcript extraction, API calls, UI management)
-- `styles.css` - YouTube-matched dark theme styling
+- `notes-library.html` - Notes library UI
+- `notes-library.js` - Notes library logic
+- `jszip.min.js` - ZIP export/import support (Notes Library)
 - `icons/` - Extension icons (16, 32, 48, 128px)
 - `create-icons.html` - Icon generator utility
 
@@ -90,8 +96,8 @@ This creates a zip file in `dist/` ready for Chrome Web Store upload.
 - Handles dynamic content loading
 
 #### API Integration
-- Endpoint: `https://api.z.ai/api/paas/v4/chat/completions`
-- Model: `glm-4.7`
+- Endpoint: Gemini `generateContent`
+- Model: `gemini-2.0-flash`
 - McKinsey-style prompt engineering for high-quality outputs
 
 #### Storage
@@ -101,7 +107,10 @@ This creates a zip file in `dist/` ready for Chrome Web Store upload.
   ```json
   {
     "videoId": {
-      "notes": "markdown content",
+      "notes": "brief notes (legacy default)",
+      "notesBrief": "brief markdown content",
+      "notesDetailed": "detailed markdown content",
+      "activeDepth": "brief|detailed",
       "title": "video title",
       "url": "video url",
       "videoId": "id",
@@ -132,33 +141,14 @@ const systemPrompt = `You are an expert at creating McKinsey-style MECE notes...
 - **Local Storage**: All notes stored locally in your browser
 - **No Tracking**: No analytics or telemetry
 - **Minimal Permissions**: Only requires YouTube access and storage
-- **Secure API Key**: Stored encrypted in Chrome storage
-- **No External Calls**: Only calls Z.AI API for note generation
+- **Secure API Key**: Stored in Chrome storage
+- **No External Calls**: Only calls Gemini API for note generation
 
 ## Troubleshooting
 
-### API Errors - "Insufficient Balance or No Resource Package"
+### API Errors
 
-**Issue**: You get this error even though you have a paid Z.AI subscription.
-
-**Solution**: Different subscription plans support different models. The extension defaults to `glm-4.7`, but your plan might support different models.
-
-**Quick Fix**:
-1. Open `test-zai-models.html` in your browser
-2. Enter your Z.AI API key
-3. Test different models (try: `glm-4-flash`, `glm-4`, `glm-4-plus`, `glm-4-air`, `glm-3-turbo`)
-4. When you find a working model, update `content.js` line 11:
-   ```javascript
-   MODEL: 'working-model-name',  // Change glm-4.7 to the working model
-   ```
-5. Reload the extension in Chrome
-
-**Common Model Options**:
-- `glm-4-flash` - Fast, often available in most plans
-- `glm-4` - Standard model
-- `glm-4-plus` - Enhanced capabilities
-- `glm-4-air` - Lightweight version
-- `glm-3-turbo` - Older but reliable model
+If you receive API errors, verify your Gemini API key and quotas. Check the browser console for `[YouTube Notes] API Error Details:` logs.
 
 ### Transcript Not Found
 

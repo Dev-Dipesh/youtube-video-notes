@@ -25,7 +25,9 @@ mkdir -p dist
 echo -e "${YELLOW}Copying files...${NC}"
 cp manifest.json dist/
 cp content.js dist/
-cp styles.css dist/
+cp notes-library.html dist/
+cp notes-library.js dist/
+cp jszip.min.js dist/
 cp -r icons dist/
 cp README.md dist/ 2>/dev/null || echo "README.md not found, skipping..."
 

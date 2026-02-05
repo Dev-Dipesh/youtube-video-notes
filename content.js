@@ -33,7 +33,8 @@
     currentVideoUrl: null,
     transcript: null,
     transcriptPreview: null,
-    generatedNotes: null,
+    notesByDepth: { brief: null, detailed: null },
+    activeDepth: "brief",
     isGenerating: false,
     isEditing: false,
     isPanelCollapsed: false,
@@ -42,7 +43,7 @@
     panelSize: { width: CONFIG.DEFAULT_WIDTH },
     isDragging: false,
     dragOffset: { x: 0, y: 0 },
-    reportDepth: "brief",
+    activeDepth: "brief",
     includeChapters: false,
     videoDuration: null,
     transcriptQuality: 0.9,
@@ -93,6 +94,14 @@
     } else {
       return `${secs}s`;
     }
+  }
+
+  function getNotesForDepth(depth) {
+    return state.notesByDepth[depth] || null;
+  }
+
+  function hasAnyNotes() {
+    return Boolean(state.notesByDepth.brief || state.notesByDepth.detailed);
   }
 
   function getVideoDurationSeconds() {
@@ -213,7 +222,7 @@
       // Ctrl/Cmd + E - Edit mode
       if (modKey && e.key === "e") {
         e.preventDefault();
-        if (state.generatedNotes && !state.isEditing) {
+        if (hasAnyNotes() && !state.isEditing) {
           handleEdit();
         }
       }
@@ -346,7 +355,7 @@
 
   // ==================== API INTEGRATION ====================
 
-  async function generateNotes(transcript, regenerate = false) {
+  async function generateNotes(transcript, depth) {
     const apiKey = await getApiKey();
 
     if (!apiKey) {
@@ -354,7 +363,7 @@
     }
 
     const depthInstruction =
-      state.reportDepth === "detailed"
+      depth === "detailed"
         ? `Depth: Detailed. Expand analysis and include more nuance and examples. Use longer paragraphs when helpful and include more supporting bullets per section (up to 6).`
         : `Depth: Brief. Keep it concise and high-level. Prefer short paragraphs and keep bullets to a minimum (up to 3 per section).`;
 
@@ -438,9 +447,6 @@ Focus on signal over noise. Every word should add value. Be ruthless in removing
 
       const data = await response.json();
       const notes = data.candidates[0].content.parts[0].text;
-
-      await saveNotes(state.currentVideoId, notes);
-
       return notes;
     } catch (error) {
       console.error("[YouTube Notes] API error:", error);
@@ -469,17 +475,29 @@ Focus on signal over noise. Every word should add value. Be ruthless in removing
     });
   }
 
-  async function saveNotes(videoId, notes) {
+  async function saveNotes(videoId, overrides = {}) {
     return new Promise((resolve) => {
       chrome.storage.local.get([CONFIG.STORAGE_KEYS.NOTES], (result) => {
         const allNotes = result[CONFIG.STORAGE_KEYS.NOTES] || {};
+        const notesBrief =
+          overrides.brief !== undefined
+            ? overrides.brief
+            : state.notesByDepth.brief;
+        const notesDetailed =
+          overrides.detailed !== undefined
+            ? overrides.detailed
+            : state.notesByDepth.detailed;
+        const activeDepth =
+          overrides.activeDepth || state.activeDepth || "brief";
 
         allNotes[videoId] = {
-          notes: notes,
+          notes: notesBrief || notesDetailed || "",
+          notesBrief: notesBrief || "",
+          notesDetailed: notesDetailed || "",
           title: state.currentVideoTitle,
           url: state.currentVideoUrl,
           videoId: videoId,
-          reportDepth: state.reportDepth,
+          activeDepth,
           createdAt: allNotes[videoId]?.createdAt || new Date().toISOString(),
           updatedAt: new Date().toISOString(),
         };
@@ -502,7 +520,7 @@ Focus on signal over noise. Every word should add value. Be ruthless in removing
           const reportDepth = result[CONFIG.STORAGE_KEYS.REPORT_DEPTH];
           const includeChapters = result[CONFIG.STORAGE_KEYS.INCLUDE_CHAPTERS];
           if (reportDepth === "brief" || reportDepth === "detailed") {
-            state.reportDepth = reportDepth;
+            state.activeDepth = reportDepth;
           }
           if (typeof includeChapters === "boolean") {
             state.includeChapters = includeChapters;
@@ -517,7 +535,7 @@ Focus on signal over noise. Every word should add value. Be ruthless in removing
     return new Promise((resolve) => {
       chrome.storage.local.set(
         {
-          [CONFIG.STORAGE_KEYS.REPORT_DEPTH]: state.reportDepth,
+          [CONFIG.STORAGE_KEYS.REPORT_DEPTH]: state.activeDepth,
           [CONFIG.STORAGE_KEYS.INCLUDE_CHAPTERS]: state.includeChapters,
         },
         resolve
@@ -1415,24 +1433,24 @@ Focus on signal over noise. Every word should add value. Be ruthless in removing
 
         <div id="ytn-cost-estimate" class="ytn-cost-estimate" style="display: none;"></div>
 
-        <div id="ytn-actions-secondary" class="ytn-actions-secondary" style="display: none;">
+        <div id="ytn-actions-secondary" class="ytn-actions-secondary">
           <select id="ytn-depth-select" class="ytn-btn ytn-btn-secondary ytn-btn-select" aria-label="Report depth">
             <option value="brief">Brief</option>
             <option value="detailed">Detailed</option>
           </select>
-          <button id="ytn-copy-btn" class="ytn-btn ytn-btn-secondary" title="Copy notes (Ctrl+C)">
+          <button id="ytn-copy-btn" class="ytn-btn ytn-btn-secondary" title="Copy notes (Ctrl+C)" style="display: none;">
             <svg viewBox="0 0 24 24" fill="currentColor">
               <path d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"/>
             </svg>
             Copy
           </button>
-          <button id="ytn-download-btn" class="ytn-btn ytn-btn-secondary" title="Download as Markdown">
+          <button id="ytn-download-btn" class="ytn-btn ytn-btn-secondary" title="Download as Markdown" style="display: none;">
             <svg viewBox="0 0 24 24" fill="currentColor">
               <path d="M5,20H19V18H5M19,9H15V3H9V9H5L12,16L19,9Z"/>
             </svg>
             Download
           </button>
-          <button id="ytn-edit-btn" class="ytn-btn ytn-btn-secondary" title="Edit notes (Ctrl+E)">
+          <button id="ytn-edit-btn" class="ytn-btn ytn-btn-secondary" title="Edit notes (Ctrl+E)" style="display: none;">
             <svg viewBox="0 0 24 24" fill="currentColor">
               <path d="M20.71,7.04C21.1,6.65 21.1,6 20.71,5.63L18.37,3.29C18,2.9 17.35,2.9 16.96,3.29L15.12,5.12L18.87,8.87M3,17.25V21H6.75L17.81,9.93L14.06,6.18L3,17.25Z"/>
             </svg>
@@ -1496,15 +1514,18 @@ Focus on signal over noise. Every word should add value. Be ruthless in removing
     );
     panelElements.viewAllBtn.addEventListener("click", openNotesLibrary);
     panelElements.depthSelect.addEventListener("change", (event) => {
-      state.reportDepth = event.target.value;
+      state.activeDepth = event.target.value;
       saveUserSettings();
+      if (hasAnyNotes()) {
+        displayNotesForDepth(state.activeDepth);
+      }
     });
     panelElements.chaptersToggle.addEventListener("change", (event) => {
       state.includeChapters = event.target.checked;
       saveUserSettings();
     });
 
-    panelElements.depthSelect.value = state.reportDepth;
+    panelElements.depthSelect.value = state.activeDepth;
     panelElements.chaptersToggle.checked = state.includeChapters;
     panelElements.chaptersSetting.style.display = state.hasChapters
       ? "inline-flex"
@@ -1541,15 +1562,14 @@ Focus on signal over noise. Every word should add value. Be ruthless in removing
     if (!videoId) return;
 
     const savedData = await loadNotes(videoId);
-    if (savedData && savedData.notes) {
-      state.generatedNotes = savedData.notes;
-      if (savedData.reportDepth) {
-        state.reportDepth = savedData.reportDepth;
-        if (panelElements.depthSelect) {
-          panelElements.depthSelect.value = state.reportDepth;
-        }
+    if (savedData && (savedData.notesBrief || savedData.notesDetailed || savedData.notes)) {
+      state.notesByDepth.brief = savedData.notesBrief || savedData.notes || null;
+      state.notesByDepth.detailed = savedData.notesDetailed || null;
+      state.activeDepth = savedData.activeDepth || savedData.reportDepth || "brief";
+      if (panelElements.depthSelect) {
+        panelElements.depthSelect.value = state.activeDepth;
       }
-      displayNotes(savedData.notes);
+      displayNotesForDepth(state.activeDepth);
       showToast("Notes loaded from storage", "info", 2000);
       return true;
     }
@@ -1603,22 +1623,35 @@ Focus on signal over noise. Every word should add value. Be ruthless in removing
       // Show transcript preview
       showTranscriptPreview(transcript);
 
+      const selectedDepth = state.activeDepth;
+
       // Step 2: Generate notes
+      if (selectedDepth === "detailed" && !state.notesByDepth.brief) {
+        showProgress(2, "Generating brief version...");
+        const briefNotes = await generateNotes(transcript, "brief");
+        state.notesByDepth.brief = briefNotes;
+      }
+
       showProgress(
         2,
-        state.videoDuration && state.videoDuration > 7200
+        selectedDepth === "detailed"
+          ? "Generating detailed version..."
+          : state.videoDuration && state.videoDuration > 7200
           ? "Long video detected. Analyzing content..."
           : "Analyzing video content..."
       );
 
-      const notes = await generateNotes(transcript, regenerate);
-      state.generatedNotes = notes;
+      const notes = await generateNotes(transcript, selectedDepth);
+      state.notesByDepth[selectedDepth] = notes;
+      state.activeDepth = selectedDepth;
+
+      await saveNotes(state.currentVideoId);
 
       // Hide progress
       panelElements.progressArea.style.display = "none";
 
       // Display notes
-      displayNotes(notes);
+      displayNotesForDepth(state.activeDepth);
 
       if (regenerate) {
         showToast("Notes regenerated successfully!", "success");
@@ -1718,10 +1751,11 @@ Focus on signal over noise. Every word should add value. Be ruthless in removing
   }
 
   function handleCopy() {
-    if (!state.generatedNotes) return;
+    const notes = getNotesForDepth(state.activeDepth);
+    if (!notes) return;
 
     navigator.clipboard
-      .writeText(state.generatedNotes)
+      .writeText(notes)
       .then(() => {
         showToast("Notes copied to clipboard!", "success");
       })
@@ -1731,13 +1765,14 @@ Focus on signal over noise. Every word should add value. Be ruthless in removing
   }
 
   function handleDownload() {
-    if (!state.generatedNotes) return;
+    const notes = getNotesForDepth(state.activeDepth);
+    if (!notes) return;
 
-    const blob = new Blob([state.generatedNotes], { type: "text/markdown" });
+    const blob = new Blob([notes], { type: "text/markdown" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `${state.currentVideoTitle || "youtube-notes"}.md`;
+    a.download = `${state.currentVideoTitle || "youtube-notes"}-${state.activeDepth}.md`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -1747,7 +1782,8 @@ Focus on signal over noise. Every word should add value. Be ruthless in removing
   }
 
   function handleEdit() {
-    if (!state.generatedNotes) return;
+    const notes = getNotesForDepth(state.activeDepth);
+    if (!notes) return;
 
     if (state.isEditing) {
       // Save edit
@@ -1755,7 +1791,7 @@ Focus on signal over noise. Every word should add value. Be ruthless in removing
     } else {
       // Enter edit mode
       state.isEditing = true;
-      panelElements.notesEditor.value = state.generatedNotes;
+      panelElements.notesEditor.value = notes;
       panelElements.notesContent.style.display = "none";
       panelElements.notesEditor.style.display = "block";
       panelElements.editBtn.innerHTML = `
@@ -1772,10 +1808,10 @@ Focus on signal over noise. Every word should add value. Be ruthless in removing
 
   async function saveEdit() {
     const editedNotes = panelElements.notesEditor.value;
-    state.generatedNotes = editedNotes;
+    state.notesByDepth[state.activeDepth] = editedNotes;
 
     // Save to storage
-    await saveNotes(state.currentVideoId, editedNotes);
+    await saveNotes(state.currentVideoId);
 
     // Exit edit mode
     state.isEditing = false;
@@ -1791,7 +1827,7 @@ Focus on signal over noise. Every word should add value. Be ruthless in removing
     panelElements.editBtn.classList.add("ytn-btn-secondary");
 
     // Update display
-    displayNotes(editedNotes);
+    displayNotesForDepth(state.activeDepth);
     showToast("Notes saved!", "success");
   }
 
@@ -1812,11 +1848,18 @@ Focus on signal over noise. Every word should add value. Be ruthless in removing
 
   // ==================== UI DISPLAY ====================
 
-  function displayNotes(notes) {
-    // Render markdown to HTML
-    const html = renderMarkdown(notes);
-    panelElements.notesContent.innerHTML = html;
+  function displayNotesForDepth(depth) {
+    state.activeDepth = depth;
+    const notes = getNotesForDepth(depth);
     panelElements.notesContent.style.display = "block";
+
+    if (!notes) {
+      panelElements.notesContent.innerHTML =
+        "<p>No notes for this depth yet. Click Generate Notes to create them.</p>";
+    } else {
+      const html = renderMarkdown(notes);
+      panelElements.notesContent.innerHTML = html;
+    }
 
     // Hide empty state and progress
     panelElements.contentArea.style.display = "none";
@@ -1825,6 +1868,10 @@ Focus on signal over noise. Every word should add value. Be ruthless in removing
 
     // Show action buttons
     panelElements.actionsSecondary.style.display = "flex";
+    const hasNotes = Boolean(notes);
+    panelElements.copyBtn.style.display = hasNotes ? "inline-flex" : "none";
+    panelElements.downloadBtn.style.display = hasNotes ? "inline-flex" : "none";
+    panelElements.editBtn.style.display = hasNotes ? "inline-flex" : "none";
     panelElements.regenerateBtn.style.display = "inline-flex";
   }
 
