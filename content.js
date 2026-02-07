@@ -126,8 +126,8 @@
   function getCaptionTrackInfo() {
     try {
       const tracks =
-        window.ytInitialPlayerResponse?.captions?.playerCaptionsTracklistRenderer
-          ?.captionTracks || [];
+        window.ytInitialPlayerResponse?.captions
+          ?.playerCaptionsTracklistRenderer?.captionTracks || [];
       if (tracks.length === 0) return null;
       const defaultTrack = tracks[0];
       return {
@@ -145,9 +145,7 @@
     );
     if (!chapterRenderer) return [];
     const chapterItems = Array.from(
-      chapterRenderer.querySelectorAll(
-        "ytd-macro-markers-list-item-renderer"
-      )
+      chapterRenderer.querySelectorAll("ytd-macro-markers-list-item-renderer")
     );
     return chapterItems
       .map((item) => {
@@ -308,7 +306,8 @@
       ).find(
         (btn) =>
           btn.textContent.includes("Show transcript") ||
-          btn.textContent.includes("Open transcript")
+          btn.textContent.includes("Open transcript") ||
+          btn.textContent.includes("Показать текст видео")
       );
 
       if (!transcriptButton) {
@@ -515,7 +514,10 @@ Focus on signal over noise. Every word should add value. Be ruthless in removing
   async function loadUserSettings() {
     return new Promise((resolve) => {
       chrome.storage.local.get(
-        [CONFIG.STORAGE_KEYS.REPORT_DEPTH, CONFIG.STORAGE_KEYS.INCLUDE_CHAPTERS],
+        [
+          CONFIG.STORAGE_KEYS.REPORT_DEPTH,
+          CONFIG.STORAGE_KEYS.INCLUDE_CHAPTERS,
+        ],
         (result) => {
           const reportDepth = result[CONFIG.STORAGE_KEYS.REPORT_DEPTH];
           const includeChapters = result[CONFIG.STORAGE_KEYS.INCLUDE_CHAPTERS];
@@ -1562,10 +1564,15 @@ Focus on signal over noise. Every word should add value. Be ruthless in removing
     if (!videoId) return;
 
     const savedData = await loadNotes(videoId);
-    if (savedData && (savedData.notesBrief || savedData.notesDetailed || savedData.notes)) {
-      state.notesByDepth.brief = savedData.notesBrief || savedData.notes || null;
+    if (
+      savedData &&
+      (savedData.notesBrief || savedData.notesDetailed || savedData.notes)
+    ) {
+      state.notesByDepth.brief =
+        savedData.notesBrief || savedData.notes || null;
       state.notesByDepth.detailed = savedData.notesDetailed || null;
-      state.activeDepth = savedData.activeDepth || savedData.reportDepth || "brief";
+      state.activeDepth =
+        savedData.activeDepth || savedData.reportDepth || "brief";
       if (panelElements.depthSelect) {
         panelElements.depthSelect.value = state.activeDepth;
       }
@@ -1706,9 +1713,7 @@ Focus on signal over noise. Every word should add value. Be ruthless in removing
       hints.push("Long video detected. Generation may take 30-45s.");
     }
     if (state.transcriptQuality < 0.7) {
-      hints.push(
-        "Auto-generated captions detected. Notes quality may vary."
-      );
+      hints.push("Auto-generated captions detected. Notes quality may vary.");
     }
     if (state.hasChapters) {
       hints.push("Chapters available. Enable “Include chapters” for markers.");
@@ -1728,7 +1733,9 @@ Focus on signal over noise. Every word should add value. Be ruthless in removing
           hints.length
             ? `<div class="ytn-transcript-hints">
                 ${hints
-                  .map((hint) => `<div class="ytn-transcript-hint">${hint}</div>`)
+                  .map(
+                    (hint) => `<div class="ytn-transcript-hint">${hint}</div>`
+                  )
                   .join("")}
               </div>`
             : ""
@@ -1772,7 +1779,9 @@ Focus on signal over noise. Every word should add value. Be ruthless in removing
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `${state.currentVideoTitle || "youtube-notes"}-${state.activeDepth}.md`;
+    a.download = `${state.currentVideoTitle || "youtube-notes"}-${
+      state.activeDepth
+    }.md`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -1885,10 +1894,7 @@ Focus on signal over noise. Every word should add value. Be ruthless in removing
       .replace(/^\s*\*\s+/gm, "- ");
 
     const escapeHtml = (input) =>
-      input
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;");
+      input.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
     const formatInline = (input) => {
       const escaped = escapeHtml(input);
@@ -1957,8 +1963,7 @@ Focus on signal over noise. Every word should add value. Be ruthless in removing
       tableHtml += "</tr></thead><tbody>";
       tableHtml += bodyRows
         .map(
-          (row) =>
-            `<tr>${row.map((cell) => `<td>${cell}</td>`).join("")}</tr>`
+          (row) => `<tr>${row.map((cell) => `<td>${cell}</td>`).join("")}</tr>`
         )
         .join("");
       tableHtml += "</tbody></table>";
@@ -2078,7 +2083,7 @@ Focus on signal over noise. Every word should add value. Be ruthless in removing
   async function openNotesLibrary() {
     // Ensure storage is synced before opening library
     // Small delay to ensure Chrome storage has fully persisted
-    await new Promise(resolve => setTimeout(resolve, 100));
+    await new Promise((resolve) => setTimeout(resolve, 100));
 
     // Open notes library in new tab
     const libraryUrl = chrome.runtime.getURL("notes-library.html");
