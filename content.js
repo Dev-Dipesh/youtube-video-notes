@@ -608,6 +608,34 @@ Focus on signal over noise. Every word should add value. Be ruthless in removing
 
   // ==================== TOOLBAR BUTTON ====================
 
+  let toolbarObserver = null;
+  let toolbarRetryTimeout = null;
+
+  function cleanupToolbarObserver() {
+    if (toolbarObserver) {
+      toolbarObserver.disconnect();
+      toolbarObserver = null;
+    }
+    if (toolbarRetryTimeout) {
+      clearTimeout(toolbarRetryTimeout);
+      toolbarRetryTimeout = null;
+    }
+  }
+
+  function observeToolbar() {
+    if (toolbarObserver) return;
+    toolbarObserver = new MutationObserver(() => {
+      const created = createToolbarButton();
+      if (created) {
+        cleanupToolbarObserver();
+      }
+    });
+    toolbarObserver.observe(document.documentElement, {
+      childList: true,
+      subtree: true,
+    });
+  }
+
   function createToolbarButton() {
     // Remove existing button
     const existingBtn = document.getElementById("ytn-toolbar-btn");
@@ -619,7 +647,7 @@ Focus on signal over noise. Every word should add value. Be ruthless in removing
     const topBar = document.querySelector("#end");
     if (!topBar) {
       console.warn("[YouTube Notes] Could not find YouTube toolbar");
-      return;
+      return false;
     }
 
     const toolbarBtn = document.createElement("button");
@@ -636,6 +664,27 @@ Focus on signal over noise. Every word should add value. Be ruthless in removing
 
     // Insert before the first child of the top bar
     topBar.insertBefore(toolbarBtn, topBar.firstChild);
+    return true;
+  }
+
+  function ensureToolbarButton() {
+    cleanupToolbarObserver();
+    const created = createToolbarButton();
+    if (created) return;
+    observeToolbar();
+    let attempts = 0;
+    const retry = () => {
+      attempts += 1;
+      if (createToolbarButton() || attempts >= 6) {
+        if (attempts >= 6) {
+          console.warn("[YouTube Notes] Toolbar still not found after retries");
+        }
+        cleanupToolbarObserver();
+        return;
+      }
+      toolbarRetryTimeout = setTimeout(retry, 600 * attempts);
+    };
+    toolbarRetryTimeout = setTimeout(retry, 400);
   }
 
   // ==================== UI CREATION ====================
@@ -2282,7 +2331,7 @@ Focus on signal over noise. Every word should add value. Be ruthless in removing
     createPanel();
 
     // Create toolbar button
-    createToolbarButton();
+    ensureToolbarButton();
 
     // Start with panel visible
     togglePanel(true);
@@ -2298,6 +2347,23 @@ Focus on signal over noise. Every word should add value. Be ruthless in removing
     console.log("[YouTube Notes] Extension initialized for video:", videoId);
   }
 
+  function handleNavigation() {
+    cleanupToolbarObserver();
+    const panel = document.getElementById(CONFIG.PANEL_ID);
+    if (panel) {
+      panel.remove();
+    }
+    init();
+  }
+
+  function initNavigationHandlers() {
+    if (initNavigationHandlers.initialized) return;
+    initNavigationHandlers.initialized = true;
+    window.addEventListener("yt-navigate-finish", handleNavigation);
+    window.addEventListener("popstate", handleNavigation);
+  }
+
   // Start initialization
+  initNavigationHandlers();
   init();
 })();
