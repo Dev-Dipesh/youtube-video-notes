@@ -437,11 +437,14 @@ Focus on signal over noise. Every word should add value. Be ruthless in removing
           errorData: errorData,
           modelUsed: CONFIG.MODEL,
         });
-        throw new Error(
+        const error = new Error(
           `API error: ${response.status} - ${
             errorData?.error?.message || response.statusText
           }`
         );
+        error.status = response.status;
+        error.apiMessage = errorData?.error?.message || response.statusText;
+        throw error;
       }
 
       const data = await response.json();
@@ -606,7 +609,7 @@ Focus on signal over noise. Every word should add value. Be ruthless in removing
     toolbarBtn.className = "ytn-toolbar-button";
     toolbarBtn.title = "Notes (Ctrl+K)";
     toolbarBtn.innerHTML = `
-      <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
+      <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
         <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z"/>
       </svg>
     `;
@@ -700,24 +703,24 @@ Focus on signal over noise. Every word should add value. Be ruthless in removing
           height: 40px;
           padding: 0;
           margin-right: 8px;
-          background: transparent;
+          background: #262626;
           border: none;
           border-radius: 50%;
           cursor: pointer;
-          color: var(--ytn-text-primary);
+          color: #fafafa;
           transition: background var(--transition-fast);
         }
 
         .ytn-toolbar-button:hover {
-          background: rgba(255, 255, 255, 0.1);
+          background: #2f2f2f;
         }
 
         .ytn-dark-mode .ytn-toolbar-button:hover {
-          background: rgba(255, 255, 255, 0.1);
+          background: #2f2f2f;
         }
 
         .ytn-toolbar-button svg {
-          fill: currentColor;
+          stroke: currentColor;
         }
 
         /* ==================== PANEL BASE ==================== */
@@ -1001,6 +1004,28 @@ Focus on signal over noise. Every word should add value. Be ruthless in removing
           display: flex;
           align-items: center;
           gap: var(--space-2);
+        }
+
+        .ytn-error-panel {
+          border: 1px solid var(--ytn-border);
+          border-left: 4px solid var(--ytn-error);
+          background: var(--ytn-bg-secondary);
+          border-radius: 10px;
+          padding: var(--space-4);
+          display: grid;
+          gap: var(--space-2);
+        }
+
+        .ytn-error-title {
+          font-size: var(--text-sm);
+          font-weight: 600;
+          color: var(--ytn-text-primary);
+        }
+
+        .ytn-error-detail {
+          font-size: var(--text-xs);
+          color: var(--ytn-text-secondary);
+          line-height: 1.5;
         }
 
         .ytn-spinner {
@@ -1596,7 +1621,10 @@ Focus on signal over noise. Every word should add value. Be ruthless in removing
   }
 
   async function handleGenerate(regenerate = false, options = {}) {
-    if (state.isGenerating) return;
+    if (state.isGenerating) {
+      showToast("Generation already in progress...", "info", 2500);
+      return;
+    }
 
     try {
       state.isGenerating = true;
@@ -1667,19 +1695,14 @@ Focus on signal over noise. Every word should add value. Be ruthless in removing
       }
     } catch (error) {
       console.error("[YouTube Notes] Generation error:", error);
-      const message = error.message || "Failed to generate notes";
-      showToast(message, "error");
-      if (message.includes("No transcript")) {
-        showToast(
-          "Tip: Enable auto-generated captions in video settings.",
-          "info",
-          4000
-        );
+      const friendly = getFriendlyError(error);
+      showToast(friendly.toast, friendly.type, 5000);
+      if (friendly.type === "error" || friendly.type === "warning") {
+        showErrorState(friendly.title, friendly.detail);
       }
 
       // Show empty state again
       panelElements.contentArea.style.display = "block";
-      panelElements.progressArea.style.display = "none";
       panelElements.transcriptPreview.style.display = "none";
     } finally {
       state.isGenerating = false;
@@ -1702,6 +1725,76 @@ Focus on signal over noise. Every word should add value. Be ruthless in removing
       </div>
     `;
     updateGenerateButton(true);
+  }
+
+  function escapeHtmlText(input) {
+    return String(input)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+  }
+
+  function showErrorState(title, detail) {
+    const safeTitle = escapeHtmlText(title);
+    const safeDetail = detail ? escapeHtmlText(detail) : "";
+    panelElements.progressArea.style.display = "block";
+    panelElements.progressArea.innerHTML = `
+      <div class="ytn-error-panel ytn-fade-in">
+        <div class="ytn-error-title">${safeTitle}</div>
+        ${safeDetail ? `<div class="ytn-error-detail">${safeDetail}</div>` : ""}
+      </div>
+    `;
+    updateGenerateButton(false);
+  }
+
+  function getFriendlyError(error) {
+    const rawMessage = error?.apiMessage || error?.message || "";
+    const lowered = rawMessage.toLowerCase();
+
+    if (
+      error?.status === 429 ||
+      lowered.includes("429") ||
+      lowered.includes("rate limit") ||
+      lowered.includes("resource has been exhausted")
+    ) {
+      return {
+        toast: "Rate limit reached. Please wait a bit and try again.",
+        title: "Rate limit reached",
+        detail: "The AI service is temporarily rate-limited. Try again in a minute.",
+        type: "warning",
+      };
+    }
+
+    if (
+      lowered.includes("transcript button not found") ||
+      lowered.includes("no transcript available") ||
+      lowered.includes("no transcript segments")
+    ) {
+      return {
+        toast: "Transcript not available for this video.",
+        title: "Transcript not found",
+        detail: "Try enabling captions or open a video with transcripts available.",
+        type: "error",
+      };
+    }
+
+    if (lowered.includes("failed to fetch") || lowered.includes("network")) {
+      return {
+        toast: "Network error while generating notes.",
+        title: "Network error",
+        detail: "Check your connection and try again.",
+        type: "error",
+      };
+    }
+
+    return {
+      toast: rawMessage || "Failed to generate notes.",
+      title: "Could not generate notes",
+      detail: rawMessage || "Please try again.",
+      type: "error",
+    };
   }
 
   function showTranscriptPreview(transcript) {

@@ -238,6 +238,10 @@
       gap: 24px;
     }
 
+    .notes-grid.grouped {
+      display: block;
+    }
+
     .note-card {
       background: white;
       border: 1px solid #e5e5e5;
@@ -326,6 +330,29 @@
       flex-wrap: wrap;
     }
 
+    .note-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 14px;
+    }
+
+    .tag-chip {
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 500;
+      background: #f1f1f1;
+      color: #0f0f0f;
+      border: 1px solid #e5e5e5;
+    }
+
+    body.dark-mode .tag-chip {
+      background: #272727;
+      color: #f1f1f1;
+      border-color: #303030;
+    }
+
     .btn {
       padding: 8px 16px;
       border: none;
@@ -370,6 +397,164 @@
 
     body.dark-mode .btn-secondary:hover {
       background: #3d3d3d;
+    }
+
+    .btn-danger {
+      background: #fce8e6;
+      color: #b31412;
+    }
+
+    .btn-danger:hover {
+      background: #f9d3cf;
+    }
+
+    body.dark-mode .btn-danger {
+      background: #3a1f1f;
+      color: #ffb3ae;
+    }
+
+    body.dark-mode .btn-danger:hover {
+      background: #4a2626;
+    }
+
+    .tag-panel {
+      border: 1px solid #e5e5e5;
+      border-radius: 12px;
+      background: white;
+      margin-bottom: 16px;
+      overflow: hidden;
+    }
+
+    body.dark-mode .tag-panel {
+      background: #1f1f1f;
+      border-color: #303030;
+    }
+
+    .tag-panel summary {
+      list-style: none;
+      cursor: pointer;
+      padding: 14px 18px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: #fafafa;
+    }
+
+    .tag-panel summary::-webkit-details-marker {
+      display: none;
+    }
+
+    body.dark-mode .tag-panel summary {
+      background: #262626;
+    }
+
+    .tag-panel summary:hover {
+      background: #f1f1f1;
+    }
+
+    body.dark-mode .tag-panel summary:hover {
+      background: #303030;
+    }
+
+    .tag-count {
+      font-size: 12px;
+      font-weight: 600;
+      color: #606060;
+      padding: 2px 8px;
+      border-radius: 999px;
+      border: 1px solid #e5e5e5;
+      background: white;
+    }
+
+    body.dark-mode .tag-count {
+      color: #aaaaaa;
+      border-color: #303030;
+      background: #1f1f1f;
+    }
+
+    .tag-label {
+      font-size: 15px;
+      color: inherit;
+    }
+
+    .tag-toggle-icon {
+      width: 16px;
+      height: 16px;
+      position: relative;
+      margin-left: auto;
+      color: #606060;
+    }
+
+    body.dark-mode .tag-toggle-icon {
+      color: #aaaaaa;
+    }
+
+    .tag-toggle-icon::before,
+    .tag-toggle-icon::after {
+      content: '';
+      position: absolute;
+      background: currentColor;
+      border-radius: 2px;
+      transition: transform 0.2s ease;
+    }
+
+    .tag-toggle-icon::before {
+      width: 12px;
+      height: 2px;
+      top: 7px;
+      left: 2px;
+    }
+
+    .tag-toggle-icon::after {
+      width: 2px;
+      height: 12px;
+      top: 2px;
+      left: 7px;
+      transform-origin: center;
+    }
+
+    details[open] .tag-toggle-icon::after {
+      transform: scaleY(0);
+    }
+
+    .tag-panel-content {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.25s ease;
+    }
+
+    .group-notes {
+      display: grid;
+      gap: 16px;
+      padding: 16px 18px 20px;
+    }
+
+    .unlisted-divider {
+      border: none;
+      border-top: 1px solid #e5e5e5;
+      margin: 24px 0 12px;
+    }
+
+    body.dark-mode .unlisted-divider {
+      border-top-color: #303030;
+    }
+
+    .unlisted-heading {
+      font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #606060;
+      margin-bottom: 12px;
+    }
+
+    body.dark-mode .unlisted-heading {
+      color: #aaaaaa;
+    }
+
+    .unlisted-notes {
+      display: grid;
+      gap: 16px;
     }
 
     .empty-state {
@@ -495,6 +680,16 @@
       color: #f1f1f1;
     }
 
+    .modal-meta {
+      font-size: 13px;
+      color: #909090;
+      margin-top: 6px;
+    }
+
+    body.dark-mode .modal-meta {
+      color: #717171;
+    }
+
     .modal-close {
       width: 32px;
       height: 32px;
@@ -616,6 +811,95 @@
       background: #272727;
     }
 
+    .modal-tags {
+      margin-bottom: 20px;
+      border: 1px solid #e5e5e5;
+      border-radius: 10px;
+      padding: 12px 14px;
+      background: #fafafa;
+    }
+
+    body.dark-mode .modal-tags {
+      background: #262626;
+      border-color: #303030;
+    }
+
+    .modal-tags-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+      gap: 12px;
+    }
+
+    .modal-tags-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: #0f0f0f;
+    }
+
+    body.dark-mode .modal-tags-title {
+      color: #f1f1f1;
+    }
+
+    .modal-tags-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      min-height: 20px;
+    }
+
+    .modal-tags-empty {
+      font-size: 13px;
+      color: #606060;
+    }
+
+    body.dark-mode .modal-tags-empty {
+      color: #aaaaaa;
+    }
+
+    .modal-tags-editor {
+      margin-top: 12px;
+      display: grid;
+      gap: 10px;
+    }
+
+    .modal-tags-input {
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 8px;
+      border: 1px solid #e5e5e5;
+      font-size: 14px;
+    }
+
+    body.dark-mode .modal-tags-input {
+      background: #1f1f1f;
+      border-color: #303030;
+      color: #f1f1f1;
+    }
+
+    .modal-tags-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .confirm-modal .modal-content {
+      max-width: 480px;
+      padding: 24px;
+    }
+
+    .confirm-modal .modal-body {
+      font-size: 15px;
+    }
+
+    .confirm-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      margin-top: 20px;
+    }
+
     @media (max-width: 768px) {
       .container {
         padding: 20px 16px;
@@ -676,6 +960,9 @@
         <option value="oldest">Oldest First</option>
         <option value="title">Title A-Z</option>
       </select>
+      <button class="controls-btn" id="group-toggle-btn" aria-pressed="false">
+        Group
+      </button>
       <div class="controls-right">
         <button class="controls-btn" id="export-notes-btn">
           Export
@@ -708,13 +995,17 @@
   <div class="modal" id="note-modal">
     <div class="modal-content">
       <div class="modal-header">
-        <h2 class="modal-title" id="modal-title">Note Title</h2>
+        <div>
+          <h2 class="modal-title" id="modal-title">Note Title</h2>
+          <div class="modal-meta" id="modal-meta"></div>
+        </div>
         <div class="modal-actions">
           <select id="modal-depth-select" aria-label="Note depth">
             <option value="brief">Brief</option>
             <option value="detailed">Detailed</option>
           </select>
           <button class="btn btn-secondary" id="modal-edit-btn">Edit</button>
+          <button class="btn btn-danger" id="modal-delete-btn">Delete</button>
           <button class="btn btn-primary" id="modal-save-btn" style="display: none;">Save</button>
           <button class="btn btn-secondary" id="modal-cancel-btn" style="display: none;">Cancel</button>
           <button class="modal-close" id="modal-close-btn" aria-label="Close">
@@ -724,10 +1015,50 @@
           </button>
         </div>
       </div>
+      <div class="modal-tags" id="modal-tags">
+        <div class="modal-tags-header">
+          <div class="modal-tags-title">Tags</div>
+          <button class="btn btn-secondary" id="modal-tags-edit-btn">Edit Tags</button>
+        </div>
+        <div class="modal-tags-list" id="modal-tags-list"></div>
+        <div class="modal-tags-editor" id="modal-tags-editor" style="display: none;">
+          <input
+            type="text"
+            class="modal-tags-input"
+            id="modal-tags-input"
+            placeholder="Add tags separated by commas"
+          >
+          <div class="modal-tags-actions">
+            <button class="btn btn-primary" id="modal-tags-save-btn">Save Tags</button>
+            <button class="btn btn-secondary" id="modal-tags-cancel-btn">Cancel</button>
+          </div>
+        </div>
+      </div>
       <div class="modal-body" id="modal-body">
         <!-- Note content will be inserted here -->
       </div>
       <textarea class="modal-editor" id="modal-editor" style="display: none;"></textarea>
+    </div>
+  </div>
+
+  <!-- Modal for confirming deletion -->
+  <div class="modal confirm-modal" id="delete-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 class="modal-title">Delete Note</h2>
+        <button class="modal-close" id="delete-modal-close-btn" aria-label="Close">
+          <svg viewBox="0 0 24 24">
+            <path d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z"/>
+          </svg>
+        </button>
+      </div>
+      <div class="modal-body" id="delete-modal-body">
+        Are you sure you want to delete this note? This action cannot be undone.
+      </div>
+      <div class="confirm-actions">
+        <button class="btn btn-secondary" id="delete-cancel-btn">Cancel</button>
+        <button class="btn btn-danger" id="delete-confirm-btn">Delete</button>
+      </div>
     </div>
   </div>
 

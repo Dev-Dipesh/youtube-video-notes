@@ -3,6 +3,10 @@
 let allNotes = [];
 let filteredNotes = [];
 let activeNoteId = null;
+let pendingDeleteId = null;
+
+const groupModeKey = 'notesLibraryGroupMode';
+let groupMode = localStorage.getItem(groupModeKey) === 'grouped' ? 'grouped' : 'ungrouped';
 
 function getNoteDepth(note) {
   return note.activeDepth || note.reportDepth || (note.notesBrief ? 'brief' : 'detailed');
@@ -13,6 +17,23 @@ function getNoteContent(note, depth) {
     return note.notesDetailed || '';
   }
   return note.notesBrief || note.notes || '';
+}
+
+function getNoteTags(note) {
+  return Array.isArray(note.tags) ? note.tags : [];
+}
+
+function normalizeTags(input) {
+  if (!input) return [];
+  return Array.from(
+    new Set(
+      input
+        .split(',')
+        .map(tag => tag.trim())
+        .filter(Boolean)
+        .map(tag => tag.toLowerCase())
+    )
+  );
 }
 
 // ==================== DARK MODE ====================
@@ -60,37 +81,34 @@ async function loadNotes() {
       new Date(b.updatedAt) - new Date(a.updatedAt)
     );
     filteredNotes = [...allNotes];
+    applySearchFilter();
     renderNotes();
     updateStats();
   });
 }
 
 // Render notes grid
-function renderNotes() {
-  const grid = document.getElementById('notes-grid');
+function renderTagsHtml(tags) {
+  if (!tags.length) return '';
+  return `
+    <div class="note-tags">
+      ${tags.map(tag => `<span class="tag-chip">${escapeHtml(tag)}</span>`).join('')}
+    </div>
+  `;
+}
 
-  if (filteredNotes.length === 0) {
-    grid.innerHTML = `
-      <div class="empty-state">
-        <svg class="empty-icon" viewBox="0 0 24 24" fill="currentColor">
-          <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z"/>
-        </svg>
-        <div class="empty-title">No notes yet</div>
-        <div class="empty-description">Start generating notes from YouTube videos</div>
-      </div>
-    `;
-    return;
-  }
-
-  grid.innerHTML = filteredNotes.map(note => `
+function renderNoteCard(note) {
+  const tags = getNoteTags(note);
+  return `
     <div class="note-card" data-video-id="${note.videoId}">
       <div class="note-header">
-        <div class="note-title">${escapeHtml(note.title)}</div>
+      <div class="note-title">${escapeHtml(note.title || 'Untitled')}</div>
         <div class="note-date">${formatDate(note.updatedAt)}</div>
       </div>
       <div class="note-preview">
         ${escapeHtml(getPreview(getNoteContent(note, getNoteDepth(note))))}
       </div>
+      ${renderTagsHtml(tags)}
       <div class="note-actions">
         <button class="btn btn-primary" data-action="open-video" data-url="${note.url}">
           <svg viewBox="0 0 24 24">
@@ -110,9 +128,119 @@ function renderNotes() {
           </svg>
           Download
         </button>
+        <button class="btn btn-danger" data-action="delete" data-video-id="${note.videoId}">
+          <svg viewBox="0 0 24 24">
+            <path d="M9,3V4H4V6H5V19A2,2 0 0,0 7,21H17A2,2 0 0,0 19,19V6H20V4H15V3H9M7,6H17V19H7V6Z"/>
+          </svg>
+          Delete
+        </button>
       </div>
     </div>
-  `).join('');
+  `;
+}
+
+function renderGroupedNotes() {
+  const grouped = new Map();
+  const unlisted = [];
+
+  filteredNotes.forEach((note) => {
+    const tags = getNoteTags(note);
+    if (!tags.length) {
+      unlisted.push(note);
+      return;
+    }
+    tags.forEach((tag) => {
+      const key = tag.toLowerCase();
+      if (!grouped.has(key)) {
+        grouped.set(key, { label: tag, notes: [] });
+      }
+      grouped.get(key).notes.push(note);
+    });
+  });
+
+  const sortedTags = Array.from(grouped.keys()).sort((a, b) => a.localeCompare(b));
+  let html = '';
+
+  sortedTags.forEach((tagKey) => {
+    const group = grouped.get(tagKey);
+    html += `
+      <details class="tag-panel" data-tag="${escapeHtml(tagKey)}">
+        <summary>
+          <span class="tag-count">${group.notes.length}</span>
+          <span class="tag-label">${escapeHtml(group.label)}</span>
+          <span class="tag-toggle-icon" aria-hidden="true"></span>
+        </summary>
+        <div class="tag-panel-content">
+          <div class="group-notes">
+            ${group.notes.map(note => renderNoteCard(note)).join('')}
+          </div>
+        </div>
+      </details>
+    `;
+  });
+
+  if (unlisted.length) {
+    html += `
+      <hr class="unlisted-divider">
+      <div class="unlisted-heading">Unlisted</div>
+      <div class="unlisted-notes">
+        ${unlisted.map(note => renderNoteCard(note)).join('')}
+      </div>
+    `;
+  }
+
+  return html;
+}
+
+function renderNotes() {
+  const grid = document.getElementById('notes-grid');
+
+  if (filteredNotes.length === 0) {
+    grid.classList.remove('grouped');
+    grid.innerHTML = `
+      <div class="empty-state">
+        <svg class="empty-icon" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z"/>
+        </svg>
+        <div class="empty-title">No notes yet</div>
+        <div class="empty-description">Start generating notes from YouTube videos</div>
+      </div>
+    `;
+    return;
+  }
+
+  if (groupMode === 'grouped') {
+    grid.classList.add('grouped');
+    grid.innerHTML = renderGroupedNotes();
+    initTagPanels();
+  } else {
+    grid.classList.remove('grouped');
+    grid.innerHTML = filteredNotes.map(note => renderNoteCard(note)).join('');
+  }
+}
+
+function initTagPanels() {
+  const panels = document.querySelectorAll('.tag-panel');
+  panels.forEach((panel) => {
+    const content = panel.querySelector('.tag-panel-content');
+    if (!content) return;
+    if (panel.open) {
+      content.style.maxHeight = `${content.scrollHeight}px`;
+    } else {
+      content.style.maxHeight = '0px';
+    }
+    panel.addEventListener('toggle', () => {
+      if (panel.open) {
+        content.style.maxHeight = `${content.scrollHeight}px`;
+        return;
+      }
+      const currentHeight = content.scrollHeight;
+      content.style.maxHeight = `${currentHeight}px`;
+      requestAnimationFrame(() => {
+        content.style.maxHeight = '0px';
+      });
+    });
+  });
 }
 
 // Update statistics
@@ -125,13 +253,25 @@ function updateStats() {
 
 // Search functionality
 const searchInput = document.getElementById('search-input');
+
+function applySearchFilter() {
+  const query = searchInput ? searchInput.value.toLowerCase().trim() : '';
+  if (!query) {
+    filteredNotes = [...allNotes];
+    applyCurrentSort();
+    return;
+  }
+  filteredNotes = allNotes.filter(note =>
+    (note.title || '').toLowerCase().includes(query) ||
+    (getNoteContent(note, getNoteDepth(note)) || '').toLowerCase().includes(query) ||
+    getNoteTags(note).some(tag => tag.toLowerCase().includes(query))
+  );
+  applyCurrentSort();
+}
+
 if (searchInput) {
   searchInput.addEventListener('input', (e) => {
-    const query = e.target.value.toLowerCase();
-    filteredNotes = allNotes.filter(note =>
-      note.title.toLowerCase().includes(query) ||
-      note.notes.toLowerCase().includes(query)
-    );
+    applySearchFilter();
     renderNotes();
   });
 }
@@ -156,6 +296,10 @@ if (notesGrid) {
         downloadNotes(actionButton.dataset.videoId);
         return;
       }
+      if (action === 'delete') {
+        openDeleteModal(actionButton.dataset.videoId);
+        return;
+      }
     }
 
     const card = e.target.closest('.note-card');
@@ -167,18 +311,44 @@ if (notesGrid) {
 
 // Sort functionality
 const sortSelect = document.getElementById('sort-select');
+
+function applySort(sortBy) {
+  if (sortBy === 'newest') {
+    filteredNotes.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
+  } else if (sortBy === 'oldest') {
+    filteredNotes.sort((a, b) => new Date(a.updatedAt) - new Date(b.updatedAt));
+  } else if (sortBy === 'title') {
+    filteredNotes.sort((a, b) => a.title.localeCompare(b.title));
+  }
+}
+
+function applyCurrentSort() {
+  const sortBy = sortSelect ? sortSelect.value : 'newest';
+  applySort(sortBy);
+}
+
 if (sortSelect) {
   sortSelect.addEventListener('change', (e) => {
-    const sortBy = e.target.value;
+    applySort(e.target.value);
+    renderNotes();
+  });
+}
 
-    if (sortBy === 'newest') {
-      filteredNotes.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
-    } else if (sortBy === 'oldest') {
-      filteredNotes.sort((a, b) => new Date(a.updatedAt) - new Date(b.updatedAt));
-    } else if (sortBy === 'title') {
-      filteredNotes.sort((a, b) => a.title.localeCompare(b.title));
-    }
+const groupToggleBtn = document.getElementById('group-toggle-btn');
 
+function updateGroupToggle() {
+  if (!groupToggleBtn) return;
+  const isGrouped = groupMode === 'grouped';
+  groupToggleBtn.textContent = isGrouped ? 'Ungroup' : 'Group';
+  groupToggleBtn.setAttribute('aria-pressed', String(isGrouped));
+}
+
+if (groupToggleBtn) {
+  updateGroupToggle();
+  groupToggleBtn.addEventListener('click', () => {
+    groupMode = groupMode === 'grouped' ? 'ungrouped' : 'grouped';
+    localStorage.setItem(groupModeKey, groupMode);
+    updateGroupToggle();
     renderNotes();
   });
 }
@@ -304,20 +474,46 @@ if (importBtn && importFileInput) {
   });
 }
 
+function renderModalTags(tags) {
+  const modalTagsList = document.getElementById('modal-tags-list');
+  if (!modalTagsList) return;
+  if (!tags.length) {
+    modalTagsList.innerHTML = '<span class="modal-tags-empty">No tags yet</span>';
+    return;
+  }
+  modalTagsList.innerHTML = tags
+    .map(tag => `<span class="tag-chip">${escapeHtml(tag)}</span>`)
+    .join('');
+}
+
 // View note in modal
 function viewNote(videoId) {
   const note = allNotes.find(n => n.videoId === videoId);
   if (!note) return;
 
   const modalTitle = document.getElementById('modal-title');
+  const modalMeta = document.getElementById('modal-meta');
   const modalBody = document.getElementById('modal-body');
   const modalEditor = document.getElementById('modal-editor');
   const modalDepthSelect = document.getElementById('modal-depth-select');
+  const modalTagsList = document.getElementById('modal-tags-list');
+  const modalTagsInput = document.getElementById('modal-tags-input');
+  const modalTagsEditor = document.getElementById('modal-tags-editor');
   const noteModal = document.getElementById('note-modal');
   const depth = getNoteDepth(note);
   const content = getNoteContent(note, depth);
 
   if (modalTitle) modalTitle.textContent = note.title;
+  if (modalMeta) {
+    const createdAt = note.createdAt || note.updatedAt;
+    const updatedAt = note.updatedAt || note.createdAt;
+    const createdText = formatFullDate(createdAt);
+    const updatedText = formatFullDate(updatedAt);
+    modalMeta.innerHTML = `
+      <div>Created: ${escapeHtml(createdText)}</div>
+      <div>Updated: ${escapeHtml(updatedText)}</div>
+    `;
+  }
   if (modalBody) modalBody.innerHTML = renderMarkdown(content);
   if (modalEditor) {
     modalEditor.value = content;
@@ -326,6 +522,16 @@ function viewNote(videoId) {
   if (modalDepthSelect) {
     modalDepthSelect.value = depth;
   }
+  if (modalTagsEditor) {
+    modalTagsEditor.style.display = 'none';
+  }
+  if (modalTagsInput) {
+    modalTagsInput.value = getNoteTags(note).join(', ');
+  }
+  if (modalTagsList) {
+    renderModalTags(getNoteTags(note));
+  }
+  setModalTagsEditState(false);
   setModalEditState(false);
   if (noteModal) noteModal.classList.add('active');
   activeNoteId = videoId;
@@ -339,6 +545,7 @@ function closeModal() {
   }
   activeNoteId = null;
   setModalEditState(false);
+  setModalTagsEditState(false);
 }
 
 const modalCloseBtn = document.getElementById('modal-close-btn');
@@ -350,6 +557,10 @@ const modalEditBtn = document.getElementById('modal-edit-btn');
 const modalSaveBtn = document.getElementById('modal-save-btn');
 const modalCancelBtn = document.getElementById('modal-cancel-btn');
 const modalDepthSelect = document.getElementById('modal-depth-select');
+const modalDeleteBtn = document.getElementById('modal-delete-btn');
+const modalTagsEditBtn = document.getElementById('modal-tags-edit-btn');
+const modalTagsSaveBtn = document.getElementById('modal-tags-save-btn');
+const modalTagsCancelBtn = document.getElementById('modal-tags-cancel-btn');
 
 function setModalEditState(isEditing) {
   const modalBody = document.getElementById('modal-body');
@@ -359,6 +570,12 @@ function setModalEditState(isEditing) {
   if (modalEditBtn) modalEditBtn.style.display = isEditing ? 'none' : 'inline-flex';
   if (modalSaveBtn) modalSaveBtn.style.display = isEditing ? 'inline-flex' : 'none';
   if (modalCancelBtn) modalCancelBtn.style.display = isEditing ? 'inline-flex' : 'none';
+}
+
+function setModalTagsEditState(isEditing) {
+  const modalTagsEditor = document.getElementById('modal-tags-editor');
+  if (modalTagsEditor) modalTagsEditor.style.display = isEditing ? 'grid' : 'none';
+  if (modalTagsEditBtn) modalTagsEditBtn.style.display = isEditing ? 'none' : 'inline-flex';
 }
 
 if (modalEditBtn) {
@@ -371,6 +588,57 @@ if (modalEditBtn) {
 if (modalCancelBtn) {
   modalCancelBtn.addEventListener('click', () => {
     setModalEditState(false);
+  });
+}
+
+if (modalDeleteBtn) {
+  modalDeleteBtn.addEventListener('click', () => {
+    if (!activeNoteId) return;
+    openDeleteModal(activeNoteId);
+  });
+}
+
+if (modalTagsEditBtn) {
+  modalTagsEditBtn.addEventListener('click', () => {
+    if (!activeNoteId) return;
+    setModalTagsEditState(true);
+  });
+}
+
+if (modalTagsCancelBtn) {
+  modalTagsCancelBtn.addEventListener('click', () => {
+    if (!activeNoteId) return;
+    const note = allNotes.find(n => n.videoId === activeNoteId);
+    const modalTagsInput = document.getElementById('modal-tags-input');
+    if (modalTagsInput && note) {
+      modalTagsInput.value = getNoteTags(note).join(', ');
+    }
+    setModalTagsEditState(false);
+  });
+}
+
+if (modalTagsSaveBtn) {
+  modalTagsSaveBtn.addEventListener('click', () => {
+    if (!activeNoteId) return;
+    const modalTagsInput = document.getElementById('modal-tags-input');
+    const inputValue = modalTagsInput ? modalTagsInput.value : '';
+    const tags = normalizeTags(inputValue);
+    const note = allNotes.find(n => n.videoId === activeNoteId);
+    if (!note) return;
+
+    chrome.storage.local.get(['youtube_video_notes'], (result) => {
+      const notesData = result.youtube_video_notes || {};
+      if (!notesData[activeNoteId]) return;
+      notesData[activeNoteId].tags = tags;
+      chrome.storage.local.set({ youtube_video_notes: notesData }, () => {
+        note.tags = tags;
+        renderModalTags(tags);
+        setModalTagsEditState(false);
+        applySearchFilter();
+        renderNotes();
+        showToast('Tags updated', 'success');
+      });
+    });
   });
 }
 
@@ -399,6 +667,7 @@ if (modalSaveBtn) {
       notesData[activeNoteId].updatedAt = new Date().toISOString();
       chrome.storage.local.set({ youtube_video_notes: notesData }, () => {
         note.updatedAt = notesData[activeNoteId].updatedAt;
+        applySearchFilter();
         renderNotes();
         updateStats();
         const modalBody = document.getElementById('modal-body');
@@ -430,6 +699,75 @@ if (modalDepthSelect) {
         showToast('Depth updated', 'success');
       });
     });
+  });
+}
+
+function openDeleteModal(videoId) {
+  const deleteModal = document.getElementById('delete-modal');
+  const deleteModalBody = document.getElementById('delete-modal-body');
+  const note = allNotes.find(n => n.videoId === videoId);
+  if (!deleteModal || !note) return;
+  pendingDeleteId = videoId;
+  if (deleteModalBody) {
+    deleteModalBody.textContent = `Are you sure you want to delete "${note.title}"? This action cannot be undone.`;
+  }
+  deleteModal.classList.add('active');
+}
+
+function closeDeleteModal() {
+  const deleteModal = document.getElementById('delete-modal');
+  if (deleteModal) {
+    deleteModal.classList.remove('active');
+  }
+  pendingDeleteId = null;
+}
+
+function deleteNote(videoId) {
+  chrome.storage.local.get(['youtube_video_notes'], (result) => {
+    const notesData = result.youtube_video_notes || {};
+    if (!notesData[videoId]) return;
+    delete notesData[videoId];
+    chrome.storage.local.set({ youtube_video_notes: notesData }, () => {
+      allNotes = allNotes.filter(note => note.videoId !== videoId);
+      filteredNotes = filteredNotes.filter(note => note.videoId !== videoId);
+      applySearchFilter();
+      renderNotes();
+      updateStats();
+      if (activeNoteId === videoId) {
+        closeModal();
+      }
+      showToast('Note deleted', 'success');
+    });
+  });
+}
+
+const deleteConfirmBtn = document.getElementById('delete-confirm-btn');
+const deleteCancelBtn = document.getElementById('delete-cancel-btn');
+const deleteModalCloseBtn = document.getElementById('delete-modal-close-btn');
+const deleteModal = document.getElementById('delete-modal');
+
+if (deleteConfirmBtn) {
+  deleteConfirmBtn.addEventListener('click', () => {
+    if (!pendingDeleteId) return;
+    const targetId = pendingDeleteId;
+    closeDeleteModal();
+    deleteNote(targetId);
+  });
+}
+
+if (deleteCancelBtn) {
+  deleteCancelBtn.addEventListener('click', closeDeleteModal);
+}
+
+if (deleteModalCloseBtn) {
+  deleteModalCloseBtn.addEventListener('click', closeDeleteModal);
+}
+
+if (deleteModal) {
+  deleteModal.addEventListener('click', (e) => {
+    if (e.target.id === 'delete-modal') {
+      closeDeleteModal();
+    }
   });
 }
 
@@ -518,8 +856,10 @@ function getPreview(text) {
 function formatDate(dateString) {
   const date = new Date(dateString);
   const now = new Date();
-  const diff = now - date;
-  const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+  const startOfDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  const startOfNow = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const diff = startOfNow - startOfDate;
+  const days = Math.round(diff / (1000 * 60 * 60 * 24));
 
   if (days === 0) return 'Today';
   if (days === 1) return 'Yesterday';
@@ -530,6 +870,21 @@ function formatDate(dateString) {
     day: 'numeric',
     year: date.getFullYear() !== now.getFullYear() ? 'numeric' : undefined
   });
+}
+
+function formatFullDate(dateString) {
+  if (!dateString) return 'Unknown date';
+  const date = new Date(dateString);
+  const datePart = date.toLocaleDateString('en-US', {
+    month: 'long',
+    day: 'numeric',
+    year: 'numeric'
+  });
+  const timePart = date.toLocaleTimeString('en-US', {
+    hour: 'numeric',
+    minute: '2-digit'
+  });
+  return `${datePart} at ${timePart}`;
 }
 
 function renderMarkdown(text) {
@@ -706,6 +1061,11 @@ function renderMarkdown(text) {
 // Close modal on escape key
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') {
+    const deleteModal = document.getElementById('delete-modal');
+    if (deleteModal && deleteModal.classList.contains('active')) {
+      closeDeleteModal();
+      return;
+    }
     closeModal();
   }
 });
