@@ -2333,8 +2333,8 @@ Focus on signal over noise. Every word should add value. Be ruthless in removing
     // Create toolbar button
     ensureToolbarButton();
 
-    // Start with panel visible
-    togglePanel(true);
+    // Start with panel hidden
+    togglePanel(false);
 
     const hasSavedNotes = await loadSavedNotes();
     if (!hasSavedNotes) {
