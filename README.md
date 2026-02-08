@@ -9,10 +9,12 @@ A Chrome extension that generates McKinsey-style MECE (Mutually Exclusive, Colle
 - **McKinsey-Style Format**: Executive Summary, Key Themes, Critical Insights, Notable Quotes, Recommendations
 - **Transcript Extraction**: Automatically extracts video transcripts from YouTube
 - **Notes Library**: Browse all notes in a separate tab with search/sort
-- **Export & Import**: Export as ZIP (dated folders + metadata) and import from ZIP/JSON
-- **Edit & Copy**: Edit generated notes and copy to clipboard
+- **Tags & Grouping**: Add tags to notes, group by tag with collapsible sections, and keep an unlisted section for untagged notes
+- **Export & Import**: Export as ZIP (dated folders + metadata) and import from ZIP/JSON (includes tags)
+- **Edit, Copy, Delete**: Edit generated notes, copy to clipboard, and delete notes with confirmation
 - **Privacy-First**: All data stored locally, API key stored securely
 - **YouTube-Native UI**: Panel styling matches YouTube and respects dark mode
+- **Error Feedback**: Clear feedback for transcript issues, rate limits, and in-progress generation
 
 ## Installation
 
@@ -70,6 +72,8 @@ This creates a zip file in `dist/` ready for Chrome Web Store upload.
 - **Edit**: Click "Edit" to modify notes (changes are auto-saved)
 - **View Later**: Notes persist across browser sessions
 - **Re-generate**: Click "Regenerate" to refresh the currently selected depth
+- **Tagging**: Add tags to notes and search by tag
+- **Grouping**: Toggle Group/Ungroup to view notes by tag in collapsible sections
 
 ### Export & Import
 
@@ -114,6 +118,7 @@ This creates a zip file in `dist/` ready for Chrome Web Store upload.
       "title": "video title",
       "url": "video url",
       "videoId": "id",
+      "tags": ["tag1", "tag2"],
       "createdAt": "ISO date",
       "updatedAt": "ISO date"
     }
@@ -200,7 +205,7 @@ Enable console logs:
 - [ ] Search/filter saved notes
 - [ ] Batch process multiple videos
 - [ ] Custom prompt templates
-- [ ] Note organization (tags, folders)
+- [ ] Note organization (folders)
 - [ ] Sync across devices
 - [ ] Support for other video platforms
 
