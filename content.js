@@ -17,6 +17,7 @@
       PANEL_SIZE: "panel_size",
       REPORT_DEPTH: "report_depth",
       INCLUDE_CHAPTERS: "include_chapters",
+      MATCH_LANGUAGE: "match_transcript_language",
     },
     PANEL_ID: "ytn-notes-panel",
     RETRY_ATTEMPTS: 3,
@@ -45,6 +46,7 @@
     dragOffset: { x: 0, y: 0 },
     activeDepth: "brief",
     includeChapters: false,
+    matchTranscriptLanguage: false,
     videoDuration: null,
     transcriptQuality: 0.9,
     hasChapters: false,
@@ -366,6 +368,10 @@
         ? `Depth: Detailed. Expand analysis and include more nuance and examples. Use longer paragraphs when helpful and include more supporting bullets per section (up to 6).`
         : `Depth: Brief. Keep it concise and high-level. Prefer short paragraphs and keep bullets to a minimum (up to 3 per section).`;
 
+    const languageInstruction = state.matchTranscriptLanguage
+      ? "IMPORTANT: Write the report only in the same language as the transcript. Do not use English unless the transcript is English. If the transcript is mixed, use the dominant language."
+      : "IMPORTANT: Write the report only in English.";
+
     const chapterInstruction =
       state.includeChapters && state.chapters?.length
         ? `Include the following chapter markers where relevant:\n${state.chapters
@@ -393,6 +399,7 @@ Your task is to transform video transcripts into highly structured, executive-le
 - Keep formatting clean and consistent
 
 ${depthInstruction}
+${languageInstruction}
 ${chapterInstruction}
 
 Format your response in Markdown as a report:
@@ -404,7 +411,11 @@ Format your response in Markdown as a report:
 
 Focus on signal over noise. Every word should add value. Be ruthless in removing redundancy.`;
 
-    const userPrompt = `Please generate McKinsey-style MECE notes from the following YouTube video transcript:\n\n${transcript}\n\nVideo Title: ${state.currentVideoTitle}\nVideo URL: ${state.currentVideoUrl}`;
+    const userPrompt = `Please generate McKinsey-style MECE notes from the following YouTube video transcript:\n\n${transcript}\n\nVideo Title: ${state.currentVideoTitle}\nVideo URL: ${state.currentVideoUrl}\n\nLanguage requirement: ${
+      state.matchTranscriptLanguage
+        ? "Match the transcript language exactly."
+        : "English only."
+    }`;
 
     try {
       const response = await fetch(`${CONFIG.API_ENDPOINT}?key=${apiKey}`, {
@@ -520,15 +531,20 @@ Focus on signal over noise. Every word should add value. Be ruthless in removing
         [
           CONFIG.STORAGE_KEYS.REPORT_DEPTH,
           CONFIG.STORAGE_KEYS.INCLUDE_CHAPTERS,
+          CONFIG.STORAGE_KEYS.MATCH_LANGUAGE,
         ],
         (result) => {
           const reportDepth = result[CONFIG.STORAGE_KEYS.REPORT_DEPTH];
           const includeChapters = result[CONFIG.STORAGE_KEYS.INCLUDE_CHAPTERS];
+          const matchLanguage = result[CONFIG.STORAGE_KEYS.MATCH_LANGUAGE];
           if (reportDepth === "brief" || reportDepth === "detailed") {
             state.activeDepth = reportDepth;
           }
           if (typeof includeChapters === "boolean") {
             state.includeChapters = includeChapters;
+          }
+          if (typeof matchLanguage === "boolean") {
+            state.matchTranscriptLanguage = matchLanguage;
           }
           resolve();
         }
@@ -542,6 +558,8 @@ Focus on signal over noise. Every word should add value. Be ruthless in removing
         {
           [CONFIG.STORAGE_KEYS.REPORT_DEPTH]: state.activeDepth,
           [CONFIG.STORAGE_KEYS.INCLUDE_CHAPTERS]: state.includeChapters,
+          [CONFIG.STORAGE_KEYS.MATCH_LANGUAGE]:
+            state.matchTranscriptLanguage,
         },
         resolve
       );
@@ -1169,10 +1187,22 @@ Focus on signal over noise. Every word should add value. Be ruthless in removing
         .ytn-settings-row {
           display: flex;
           align-items: center;
-          justify-content: flex-end;
-          gap: var(--space-2);
+          justify-content: space-between;
+          gap: var(--space-3);
           flex-wrap: wrap;
           margin-bottom: var(--space-3);
+        }
+
+        .ytn-settings-left,
+        .ytn-settings-right {
+          display: flex;
+          align-items: center;
+          gap: var(--space-3);
+          flex-wrap: wrap;
+        }
+
+        .ytn-settings-right {
+          margin-left: auto;
         }
 
         .ytn-setting {
@@ -1181,6 +1211,13 @@ Focus on signal over noise. Every word should add value. Be ruthless in removing
           gap: var(--space-2);
           color: var(--ytn-text-secondary);
           font-size: var(--text-xs);
+        }
+
+        .ytn-settings-help {
+          font-size: var(--text-xs);
+          color: var(--ytn-text-tertiary);
+          line-height: 1.5;
+          margin-bottom: var(--space-3);
         }
 
         .ytn-setting input[type="checkbox"] {
@@ -1452,19 +1489,30 @@ Focus on signal over noise. Every word should add value. Be ruthless in removing
         </div>
 
         <div class="ytn-settings-row">
-          <label class="ytn-setting" id="ytn-chapters-setting" style="display: none;">
-            <input type="checkbox" id="ytn-chapters-toggle" />
-            <span>Include chapters</span>
-          </label>
+          <div class="ytn-settings-left">
+            <label class="ytn-setting" id="ytn-chapters-setting" style="display: none;">
+              <input type="checkbox" id="ytn-chapters-toggle" />
+              <span>Include chapters</span>
+            </label>
+            <label class="ytn-setting">
+              <input type="checkbox" id="ytn-language-toggle" />
+              <span>Match transcript language</span>
+            </label>
+          </div>
+          <div class="ytn-settings-right">
+            <select id="ytn-depth-select" class="ytn-btn ytn-btn-secondary ytn-btn-select" aria-label="Report depth">
+              <option value="brief">Brief</option>
+              <option value="detailed">Detailed</option>
+            </select>
+          </div>
+        </div>
+        <div class="ytn-settings-help">
+          Match transcript language will generate notes in the same language as the video. Brief generates only a brief report; Detailed generates both brief and detailed.
         </div>
 
         <div id="ytn-cost-estimate" class="ytn-cost-estimate" style="display: none;"></div>
 
         <div id="ytn-actions-secondary" class="ytn-actions-secondary">
-          <select id="ytn-depth-select" class="ytn-btn ytn-btn-secondary ytn-btn-select" aria-label="Report depth">
-            <option value="brief">Brief</option>
-            <option value="detailed">Detailed</option>
-          </select>
           <button id="ytn-copy-btn" class="ytn-btn ytn-btn-secondary" title="Copy notes (Ctrl+C)" style="display: none;">
             <svg viewBox="0 0 24 24" fill="currentColor">
               <path d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"/>
@@ -1526,6 +1574,7 @@ Focus on signal over noise. Every word should add value. Be ruthless in removing
       depthSelect: document.getElementById("ytn-depth-select"),
       chaptersSetting: document.getElementById("ytn-chapters-setting"),
       chaptersToggle: document.getElementById("ytn-chapters-toggle"),
+      languageToggle: document.getElementById("ytn-language-toggle"),
     };
 
     // Attach event listeners
@@ -1551,9 +1600,14 @@ Focus on signal over noise. Every word should add value. Be ruthless in removing
       state.includeChapters = event.target.checked;
       saveUserSettings();
     });
+    panelElements.languageToggle.addEventListener("change", (event) => {
+      state.matchTranscriptLanguage = event.target.checked;
+      saveUserSettings();
+    });
 
     panelElements.depthSelect.value = state.activeDepth;
     panelElements.chaptersToggle.checked = state.includeChapters;
+    panelElements.languageToggle.checked = state.matchTranscriptLanguage;
     panelElements.chaptersSetting.style.display = state.hasChapters
       ? "inline-flex"
       : "none";
