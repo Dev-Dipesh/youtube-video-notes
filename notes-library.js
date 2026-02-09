@@ -19,6 +19,16 @@ function getNoteContent(note, depth) {
   return note.notesBrief || note.notes || '';
 }
 
+function getLocalISOString(date = new Date()) {
+  const yyyy = date.getFullYear();
+  const mm = String(date.getMonth() + 1).padStart(2, '0');
+  const dd = String(date.getDate()).padStart(2, '0');
+  const hh = String(date.getHours()).padStart(2, '0');
+  const min = String(date.getMinutes()).padStart(2, '0');
+  const ss = String(date.getSeconds()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}T${hh}:${min}:${ss}`;
+}
+
 function getNoteTags(note) {
   return Array.isArray(note.tags) ? note.tags : [];
 }
@@ -377,7 +387,7 @@ function formatDateFolder(dateString) {
 async function exportNotesZip() {
   const zip = new JSZip();
   const metadata = {
-    exportedAt: new Date().toISOString(),
+    exportedAt: getLocalISOString(),
     totalNotes: allNotes.length,
     notes: allNotes
   };
@@ -400,7 +410,11 @@ async function exportNotesZip() {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = `youtube-notes-${new Date().toISOString().slice(0, 10)}.zip`;
+  const now = new Date();
+  const yyyy = now.getFullYear();
+  const mm = String(now.getMonth() + 1).padStart(2, '0');
+  const dd = String(now.getDate()).padStart(2, '0');
+  a.download = `youtube-notes-${yyyy}-${mm}-${dd}.zip`;
   a.click();
   URL.revokeObjectURL(url);
   showToast('Export complete', 'success');
@@ -664,7 +678,7 @@ if (modalSaveBtn) {
       }
       notesData[activeNoteId].activeDepth = depth;
       note.activeDepth = depth;
-      notesData[activeNoteId].updatedAt = new Date().toISOString();
+      notesData[activeNoteId].updatedAt = getLocalISOString();
       chrome.storage.local.set({ youtube_video_notes: notesData }, () => {
         note.updatedAt = notesData[activeNoteId].updatedAt;
         applySearchFilter();

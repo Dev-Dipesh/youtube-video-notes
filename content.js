@@ -84,6 +84,16 @@
     return (inputCost + outputCost).toFixed(4);
   }
 
+  function getLocalISOString(date = new Date()) {
+    const yyyy = date.getFullYear();
+    const mm = String(date.getMonth() + 1).padStart(2, "0");
+    const dd = String(date.getDate()).padStart(2, "0");
+    const hh = String(date.getHours()).padStart(2, "0");
+    const min = String(date.getMinutes()).padStart(2, "0");
+    const ss = String(date.getSeconds()).padStart(2, "0");
+    return `${yyyy}-${mm}-${dd}T${hh}:${min}:${ss}`;
+  }
+
   function formatDuration(seconds) {
     const hrs = Math.floor(seconds / 3600);
     const mins = Math.floor((seconds % 3600) / 60);
@@ -511,8 +521,8 @@ Focus on signal over noise. Every word should add value. Be ruthless in removing
           url: state.currentVideoUrl,
           videoId: videoId,
           activeDepth,
-          createdAt: allNotes[videoId]?.createdAt || new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
+          createdAt: allNotes[videoId]?.createdAt || getLocalISOString(),
+          updatedAt: getLocalISOString(),
         };
 
         chrome.storage.local.set(
