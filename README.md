@@ -12,9 +12,11 @@ A Chrome extension that generates McKinsey-style MECE (Mutually Exclusive, Colle
 - **Tags & Grouping**: Add tags to notes, group by tag with collapsible sections, and keep an unlisted section for untagged notes
 - **Export & Import**: Export as ZIP (dated folders + metadata) and import from ZIP/JSON (includes tags)
 - **Edit, Copy, Delete**: Edit generated notes, copy to clipboard, and delete notes with confirmation
+- **Language Control**: Optionally match the transcript language or force English-only output
 - **Privacy-First**: All data stored locally, API key stored securely
 - **YouTube-Native UI**: Panel styling matches YouTube and respects dark mode
 - **Error Feedback**: Clear feedback for transcript issues, rate limits, and in-progress generation
+- **Watch-Page Only**: Extension runs only on standard watch pages (not Shorts)
 
 ## Installation
 
@@ -66,6 +68,8 @@ This creates a zip file in `dist/` ready for Chrome Web Store upload.
 
 **Tip**: If "Detailed" is selected, the extension will generate Brief first (if missing) and then Detailed, so both are available.
 
+**Note**: The panel is hidden by default on new videos. Click the toolbar icon to open it.
+
 ### Managing Notes
 
 - **Copy**: Click "Copy" to copy notes to clipboard
@@ -74,6 +78,7 @@ This creates a zip file in `dist/` ready for Chrome Web Store upload.
 - **Re-generate**: Click "Regenerate" to refresh the currently selected depth
 - **Tagging**: Add tags to notes and search by tag
 - **Grouping**: Toggle Group/Ungroup to view notes by tag in collapsible sections
+- **Language**: Use “Match transcript language” to generate notes in the same language as the video
 
 ### Export & Import
 

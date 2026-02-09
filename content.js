@@ -2291,8 +2291,11 @@ Focus on signal over noise. Every word should add value. Be ruthless in removing
       return;
     }
 
-    // Check if we're on a watch page
-    if (!window.location.pathname.includes("/watch")) {
+    // Check if we're on a watch page (exclude Shorts)
+    if (
+      !window.location.pathname.includes("/watch") ||
+      window.location.pathname.includes("/shorts")
+    ) {
       return;
     }
 
@@ -2346,6 +2349,10 @@ Focus on signal over noise. Every word should add value. Be ruthless in removing
     const panel = document.getElementById(CONFIG.PANEL_ID);
     if (panel) {
       panel.remove();
+    }
+    const toolbarBtn = document.getElementById("ytn-toolbar-btn");
+    if (toolbarBtn) {
+      toolbarBtn.remove();
     }
     init();
   }
