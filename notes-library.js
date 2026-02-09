@@ -6,7 +6,7 @@ let activeNoteId = null;
 let pendingDeleteId = null;
 
 const groupModeKey = 'notesLibraryGroupMode';
-let groupMode = localStorage.getItem(groupModeKey) === 'grouped' ? 'grouped' : 'ungrouped';
+let groupMode = localStorage.getItem(groupModeKey) === 'ungrouped' ? 'ungrouped' : 'grouped';
 
 function getNoteDepth(note) {
   return note.activeDepth || note.reportDepth || (note.notesBrief ? 'brief' : 'detailed');
