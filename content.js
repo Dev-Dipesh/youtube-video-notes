@@ -375,8 +375,36 @@
 
     const depthInstruction =
       depth === "detailed"
-        ? `Depth: Detailed. Expand analysis and include more nuance and examples. Use longer paragraphs when helpful and include more supporting bullets per section (up to 6).`
+        ? `Depth: Detailed. Expand analysis and include more nuance, examples, and full process coverage. Use longer paragraphs when helpful and include more supporting bullets per section (up to 8).`
         : `Depth: Brief. Keep it concise and high-level. Prefer short paragraphs and keep bullets to a minimum (up to 3 per section).`;
+
+    const detailedCoverageInstruction =
+      depth === "detailed"
+        ? `DETAILED COVERAGE REQUIREMENTS:
+- Capture ALL numeric values, measurements, and thresholds mentioned (RPS, CPU %, costs, time, cores, sizes).
+- Include specific tools, commands, flags, and example parameters.
+- Include formulas/definitions explained in the video.
+- Preserve the sequence of experiments and what each step proves.
+- Highlight key tradeoffs, bottlenecks, and failure modes.
+- Write for a broad audience: explain jargon in-line so engineers and non-engineers can both follow.`
+        : "";
+
+    const detailedSectionInstruction =
+      depth === "detailed"
+        ? `OUTPUT SECTIONS (Detailed):
+## Executive Summary
+## System/Scale Context
+## Experiments & Benchmarks (step-by-step, include commands & results)
+## Bottlenecks & Observations
+## Architecture Decisions & Tradeoffs
+## Cost Drivers & Risk Points
+## Practical Takeaways`
+        : `Format your response in Markdown as a report:
+- ## Executive Summary: Short paragraph. Optional short bullet list.
+- ## Key Themes: 2-5 subsections with paragraphs and optional bullets.
+- ## Critical Insights: A brief lead-in sentence plus bullets.
+- ## Notable Quotes: Only if there are strong direct quotes; use bullets.
+- ## Recommendations: If applicable; use bullets.`;
 
     const languageInstruction = state.matchTranscriptLanguage
       ? "IMPORTANT: Write the report only in the same language as the transcript. Do not use English unless the transcript is English. If the transcript is mixed, use the dominant language."
@@ -412,14 +440,10 @@ ${depthInstruction}
 ${languageInstruction}
 ${chapterInstruction}
 
-Format your response in Markdown as a report:
-- ## Executive Summary: Short paragraph. Optional short bullet list.
-- ## Key Themes: 2-5 subsections with paragraphs and optional bullets.
-- ## Critical Insights: A brief lead-in sentence plus bullets.
-- ## Notable Quotes: Only if there are strong direct quotes; use bullets.
-- ## Recommendations: If applicable; use bullets.
+${detailedSectionInstruction}
 
-Focus on signal over noise. Every word should add value. Be ruthless in removing redundancy.`;
+Focus on signal over noise. Every word should add value. Be ruthless in removing redundancy.
+${detailedCoverageInstruction}`;
 
     const userPrompt = `Please generate McKinsey-style MECE notes from the following YouTube video transcript:\n\n${transcript}\n\nVideo Title: ${state.currentVideoTitle}\nVideo URL: ${state.currentVideoUrl}\n\nLanguage requirement: ${
       state.matchTranscriptLanguage
@@ -444,8 +468,8 @@ Focus on signal over noise. Every word should add value. Be ruthless in removing
             },
           ],
           generationConfig: {
-            temperature: 0.7,
-            maxOutputTokens: 2048,
+            temperature: depth === "detailed" ? 0.4 : 0.7,
+            maxOutputTokens: depth === "detailed" ? 4096 : 2048,
           },
         }),
       });
