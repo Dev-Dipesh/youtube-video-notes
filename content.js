@@ -153,11 +153,11 @@
 
   function detectChapters() {
     const chapterRenderer = document.querySelector(
-      "ytd-macro-markers-list-renderer"
+      "ytd-macro-markers-list-renderer",
     );
     if (!chapterRenderer) return [];
     const chapterItems = Array.from(
-      chapterRenderer.querySelectorAll("ytd-macro-markers-list-item-renderer")
+      chapterRenderer.querySelectorAll("ytd-macro-markers-list-item-renderer"),
     );
     return chapterItems
       .map((item) => {
@@ -176,8 +176,8 @@
   function hasTranscriptAvailable() {
     return Array.from(document.querySelectorAll("button")).some((btn) =>
       ["Show transcript", "Open transcript"].some((label) =>
-        btn.textContent.includes(label)
-      )
+        btn.textContent.includes(label),
+      ),
     );
   }
 
@@ -302,7 +302,7 @@
       state.hasTranscript = true;
 
       console.log(
-        `[YouTube Notes] Extracted ${fullTranscript.length} characters of transcript`
+        `[YouTube Notes] Extracted ${fullTranscript.length} characters of transcript`,
       );
       return fullTranscript;
     } catch (error) {
@@ -314,12 +314,12 @@
   async function getTranscriptFromYouTube() {
     return new Promise((resolve, reject) => {
       const transcriptButton = Array.from(
-        document.querySelectorAll("button")
+        document.querySelectorAll("button"),
       ).find(
         (btn) =>
           btn.textContent.includes("Show transcript") ||
           btn.textContent.includes("Open transcript") ||
-          btn.textContent.includes("Показать текст видео")
+          btn.textContent.includes("Показать текст видео"),
       );
 
       if (!transcriptButton) {
@@ -332,7 +332,7 @@
       setTimeout(() => {
         try {
           const transcriptSegments = document.querySelectorAll(
-            "#segments-container ytd-transcript-segment-renderer"
+            "#segments-container ytd-transcript-segment-renderer",
           );
           const transcriptData = [];
 
@@ -346,7 +346,7 @@
           });
 
           const closeButton = document.querySelector(
-            "#top-level-buttons-computed ytd-button-renderer"
+            "#top-level-buttons-computed ytd-button-renderer",
           );
           if (closeButton) {
             closeButton.click();
@@ -416,8 +416,8 @@
             .map((chapter) => `- ${chapter}`)
             .join("\n")}`
         : state.includeChapters
-        ? "If chapters are available, include chapter markers in section headings."
-        : "Do not include chapter markers unless explicitly provided.";
+          ? "If chapters are available, include chapter markers in section headings."
+          : "Do not include chapter markers unless explicitly provided.";
 
     const systemPrompt = `You are an expert at creating McKinsey-style MECE (Mutually Exclusive, Collectively Exhaustive) reports from video transcripts.
 
@@ -485,7 +485,7 @@ ${detailedCoverageInstruction}`;
         const error = new Error(
           `API error: ${response.status} - ${
             errorData?.error?.message || response.statusText
-          }`
+          }`,
         );
         error.status = response.status;
         error.apiMessage = errorData?.error?.message || response.statusText;
@@ -517,7 +517,7 @@ ${detailedCoverageInstruction}`;
         {
           [CONFIG.STORAGE_KEYS.API_KEY]: apiKey,
         },
-        resolve
+        resolve,
       );
     });
   }
@@ -553,7 +553,7 @@ ${detailedCoverageInstruction}`;
           {
             [CONFIG.STORAGE_KEYS.NOTES]: allNotes,
           },
-          resolve
+          resolve,
         );
       });
     });
@@ -581,7 +581,7 @@ ${detailedCoverageInstruction}`;
             state.matchTranscriptLanguage = matchLanguage;
           }
           resolve();
-        }
+        },
       );
     });
   }
@@ -592,10 +592,9 @@ ${detailedCoverageInstruction}`;
         {
           [CONFIG.STORAGE_KEYS.REPORT_DEPTH]: state.activeDepth,
           [CONFIG.STORAGE_KEYS.INCLUDE_CHAPTERS]: state.includeChapters,
-          [CONFIG.STORAGE_KEYS.MATCH_LANGUAGE]:
-            state.matchTranscriptLanguage,
+          [CONFIG.STORAGE_KEYS.MATCH_LANGUAGE]: state.matchTranscriptLanguage,
         },
-        resolve
+        resolve,
       );
     });
   }
@@ -619,7 +618,7 @@ ${detailedCoverageInstruction}`;
             size: state.panelSize,
           },
         },
-        resolve
+        resolve,
       );
     });
   }
@@ -640,85 +639,21 @@ ${detailedCoverageInstruction}`;
     });
   }
 
-  // ==================== TOOLBAR BUTTON ====================
+  // ==================== FLOATING TRIGGER ====================
 
-  let toolbarObserver = null;
-  let toolbarRetryTimeout = null;
+  function createFloatingTrigger() {
+    if (document.getElementById("ytn-fab")) return;
 
-  function cleanupToolbarObserver() {
-    if (toolbarObserver) {
-      toolbarObserver.disconnect();
-      toolbarObserver = null;
-    }
-    if (toolbarRetryTimeout) {
-      clearTimeout(toolbarRetryTimeout);
-      toolbarRetryTimeout = null;
-    }
-  }
-
-  function observeToolbar() {
-    if (toolbarObserver) return;
-    toolbarObserver = new MutationObserver(() => {
-      const created = createToolbarButton();
-      if (created) {
-        cleanupToolbarObserver();
-      }
-    });
-    toolbarObserver.observe(document.documentElement, {
-      childList: true,
-      subtree: true,
-    });
-  }
-
-  function createToolbarButton() {
-    // Remove existing button
-    const existingBtn = document.getElementById("ytn-toolbar-btn");
-    if (existingBtn) {
-      existingBtn.remove();
-    }
-
-    // Find YouTube's top bar (right side controls)
-    const topBar = document.querySelector("#end");
-    if (!topBar) {
-      console.warn("[YouTube Notes] Could not find YouTube toolbar");
-      return false;
-    }
-
-    const toolbarBtn = document.createElement("button");
-    toolbarBtn.id = "ytn-toolbar-btn";
-    toolbarBtn.className = "ytn-toolbar-button";
-    toolbarBtn.title = "Notes (Ctrl+K)";
-    toolbarBtn.innerHTML = `
-      <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+    const fab = document.createElement("button");
+    fab.id = "ytn-fab";
+    fab.title = "Notes (Ctrl+K)";
+    fab.innerHTML = `
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
         <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z"/>
       </svg>
     `;
-
-    toolbarBtn.addEventListener("click", () => togglePanel());
-
-    // Insert before the first child of the top bar
-    topBar.insertBefore(toolbarBtn, topBar.firstChild);
-    return true;
-  }
-
-  function ensureToolbarButton() {
-    cleanupToolbarObserver();
-    const created = createToolbarButton();
-    if (created) return;
-    observeToolbar();
-    let attempts = 0;
-    const retry = () => {
-      attempts += 1;
-      if (createToolbarButton() || attempts >= 6) {
-        if (attempts >= 6) {
-          console.warn("[YouTube Notes] Toolbar still not found after retries");
-        }
-        cleanupToolbarObserver();
-        return;
-      }
-      toolbarRetryTimeout = setTimeout(retry, 600 * attempts);
-    };
-    toolbarRetryTimeout = setTimeout(retry, 400);
+    fab.addEventListener("click", () => togglePanel());
+    document.body.appendChild(fab);
   }
 
   // ==================== UI CREATION ====================
@@ -795,32 +730,33 @@ ${detailedCoverageInstruction}`;
           --ytn-shadow-lg: rgba(0, 0, 0, 0.5);
         }
 
-        /* ==================== TOOLBAR BUTTON ==================== */
-        .ytn-toolbar-button {
-          display: inline-flex;
+        /* ==================== FLOATING TRIGGER ==================== */
+        #ytn-fab {
+          position: fixed;
+          bottom: 45px;
+          right: 3px;
+          z-index: 999999;
+          width: 44px;
+          height: 44px;
+          padding: 0;
+          border-radius: 50%;
+          background: #ff0000;
+          color: #fff;
+          border: none;
+          cursor: pointer;
+          display: flex;
           align-items: center;
           justify-content: center;
-          width: 40px;
-          height: 40px;
-          padding: 0;
-          margin-right: 8px;
-          background: #262626;
-          border: none;
-          border-radius: 50%;
-          cursor: pointer;
-          color: #fafafa;
-          transition: background var(--transition-fast);
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+          transition: background 0.2s, transform 0.15s;
         }
 
-        .ytn-toolbar-button:hover {
-          background: #2f2f2f;
+        #ytn-fab:hover {
+          background: #cc0000;
+          transform: scale(1.08);
         }
 
-        .ytn-dark-mode .ytn-toolbar-button:hover {
-          background: #2f2f2f;
-        }
-
-        .ytn-toolbar-button svg {
+        #ytn-fab svg {
           stroke: currentColor;
         }
 
@@ -1663,13 +1599,13 @@ ${detailedCoverageInstruction}`;
     // Attach event listeners
     panelElements.generateBtn.addEventListener("click", handleGenerate);
     panelElements.regenerateBtn.addEventListener("click", () =>
-      handleGenerate(true)
+      handleGenerate(true),
     );
     panelElements.copyBtn.addEventListener("click", handleCopy);
     panelElements.downloadBtn.addEventListener("click", handleDownload);
     panelElements.editBtn.addEventListener("click", handleEdit);
     panelElements.minimizeBtn.addEventListener("click", () =>
-      togglePanel(false)
+      togglePanel(false),
     );
     panelElements.viewAllBtn.addEventListener("click", openNotesLibrary);
     panelElements.depthSelect.addEventListener("change", (event) => {
@@ -1803,8 +1739,8 @@ ${detailedCoverageInstruction}`;
         selectedDepth === "detailed"
           ? "Generating detailed version..."
           : state.videoDuration && state.videoDuration > 7200
-          ? "Long video detected. Analyzing content..."
-          : "Analyzing video content..."
+            ? "Long video detected. Analyzing content..."
+            : "Analyzing video content...",
       );
 
       const notes = await generateNotes(transcript, selectedDepth);
@@ -1893,7 +1829,8 @@ ${detailedCoverageInstruction}`;
       return {
         toast: "Rate limit reached. Please wait a bit and try again.",
         title: "Rate limit reached",
-        detail: "The AI service is temporarily rate-limited. Try again in a minute.",
+        detail:
+          "The AI service is temporarily rate-limited. Try again in a minute.",
         type: "warning",
       };
     }
@@ -1906,7 +1843,8 @@ ${detailedCoverageInstruction}`;
       return {
         toast: "Transcript not available for this video.",
         title: "Transcript not found",
-        detail: "Try enabling captions or open a video with transcripts available.",
+        detail:
+          "Try enabling captions or open a video with transcripts available.",
         type: "error",
       };
     }
@@ -1958,7 +1896,7 @@ ${detailedCoverageInstruction}`;
             ? `<div class="ytn-transcript-hints">
                 ${hints
                   .map(
-                    (hint) => `<div class="ytn-transcript-hint">${hint}</div>`
+                    (hint) => `<div class="ytn-transcript-hint">${hint}</div>`,
                   )
                   .join("")}
               </div>`
@@ -1975,7 +1913,7 @@ ${detailedCoverageInstruction}`;
   async function promptForApiKey() {
     return new Promise((resolve) => {
       const apiKey = prompt(
-        "Enter your Google Gemini API Key:\n\nGet your free API key at: https://aistudio.google.com/app/apikey"
+        "Enter your Google Gemini API Key:\n\nGet your free API key at: https://aistudio.google.com/app/apikey",
       );
       resolve(apiKey?.trim() || null);
     });
@@ -2112,7 +2050,7 @@ ${detailedCoverageInstruction}`;
     const normalized = text
       .replace(
         /^\s*-\s+\*\*(Executive Summary|Key Themes|Critical Insights|Notable Quotes|Recommendations)\*\*\s*:?/gim,
-        "## $1"
+        "## $1",
       )
       .replace(/^\s*-\s+(#{2,3})\s+/gm, "$1 ")
       .replace(/^\s*\*\s+/gm, "- ");
@@ -2187,7 +2125,7 @@ ${detailedCoverageInstruction}`;
       tableHtml += "</tr></thead><tbody>";
       tableHtml += bodyRows
         .map(
-          (row) => `<tr>${row.map((cell) => `<td>${cell}</td>`).join("")}</tr>`
+          (row) => `<tr>${row.map((cell) => `<td>${cell}</td>`).join("")}</tr>`,
         )
         .join("");
       tableHtml += "</tbody></table>";
@@ -2361,8 +2299,8 @@ ${detailedCoverageInstruction}`;
     // Create panel
     createPanel();
 
-    // Create toolbar button
-    ensureToolbarButton();
+    // Create floating trigger
+    createFloatingTrigger();
 
     // Start with panel hidden
     togglePanel(false);
@@ -2379,15 +2317,11 @@ ${detailedCoverageInstruction}`;
   }
 
   function handleNavigation() {
-    cleanupToolbarObserver();
     const panel = document.getElementById(CONFIG.PANEL_ID);
     if (panel) {
       panel.remove();
     }
-    const toolbarBtn = document.getElementById("ytn-toolbar-btn");
-    if (toolbarBtn) {
-      toolbarBtn.remove();
-    }
+    document.getElementById("ytn-fab")?.remove();
     init();
   }
 
