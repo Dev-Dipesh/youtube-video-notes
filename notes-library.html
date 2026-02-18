@@ -85,10 +85,10 @@
       fill: #f1f1f1;
     }
 
-    h1 svg {
+    .library-app-icon {
       width: 32px;
       height: 32px;
-      fill: #ff0000;
+      border-radius: 6px;
     }
 
     .subtitle {
@@ -204,10 +204,11 @@
       gap: 8px;
     }
 
-    .stat-item svg {
-      width: 20px;
-      height: 20px;
-      fill: #606060;
+    .stat-icon {
+      width: 28px;
+      height: 28px;
+      opacity: 0.75;
+      border-radius: 4px;
     }
 
     .stat-value {
@@ -225,8 +226,8 @@
       color: #f1f1f1;
     }
 
-    body.dark-mode .stat-item svg {
-      fill: #aaaaaa;
+    body.dark-mode .stat-icon {
+      opacity: 0.9;
     }
 
     body.dark-mode .stat-label {
@@ -940,9 +941,7 @@
     <header>
       <div class="header-left">
         <h1>
-          <svg viewBox="0 0 24 24">
-            <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z"/>
-          </svg>
+          <img class="library-app-icon" src="icons/icon-32.png" alt="">
           YouTube Notes Library
         </h1>
         <p class="subtitle">All your video notes in one place</p>
@@ -982,9 +981,7 @@
 
     <div class="stats" id="stats">
       <div class="stat-item">
-        <svg viewBox="0 0 24 24">
-          <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z"/>
-        </svg>
+        <img class="stat-icon" src="icons/icon-32.png" alt="">
         <div>
           <div class="stat-value" id="total-notes">0</div>
           <div class="stat-label">Total Notes</div>

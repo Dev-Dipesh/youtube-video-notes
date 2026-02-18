@@ -15,6 +15,7 @@
       PANEL_STATE: "panel_state",
       PANEL_POSITION: "panel_position",
       PANEL_SIZE: "panel_size",
+      FAB_POSITION: "fab_position",
       REPORT_DEPTH: "report_depth",
       INCLUDE_CHAPTERS: "include_chapters",
       MATCH_LANGUAGE: "match_transcript_language",
@@ -42,6 +43,7 @@
     isDarkMode: false,
     panelPosition: { x: null, y: null },
     panelSize: { width: CONFIG.DEFAULT_WIDTH },
+    fabPosition: null,
     isDragging: false,
     dragOffset: { x: 0, y: 0 },
     activeDepth: "brief",
@@ -57,6 +59,7 @@
 
   // ==================== DOM ELEMENTS ====================
   let panelElements = {};
+  let lastFabViewport = null;
 
   // ==================== UTILITY FUNCTIONS ====================
 
@@ -639,22 +642,167 @@ ${detailedCoverageInstruction}`;
     });
   }
 
+  async function loadFabPosition() {
+    return new Promise((resolve) => {
+      chrome.storage.local.get([CONFIG.STORAGE_KEYS.FAB_POSITION], (result) => {
+        const fabPosition = result[CONFIG.STORAGE_KEYS.FAB_POSITION];
+        if (
+          fabPosition &&
+          Number.isFinite(fabPosition.x) &&
+          Number.isFinite(fabPosition.y)
+        ) {
+          state.fabPosition = { x: fabPosition.x, y: fabPosition.y };
+        } else {
+          state.fabPosition = null;
+        }
+        resolve(state.fabPosition);
+      });
+    });
+  }
+
+  const saveFabPositionDebounced = debounce((position) => {
+    chrome.storage.local.set({
+      [CONFIG.STORAGE_KEYS.FAB_POSITION]: position,
+    });
+  }, 250);
+
   // ==================== FLOATING TRIGGER ====================
+
+  function getDefaultFabPosition() {
+    const fabSize = 44;
+    return {
+      x: Math.max(0, window.innerWidth - 3 - fabSize),
+      y: Math.max(0, window.innerHeight - 45 - fabSize),
+    };
+  }
+
+  function clampFabPosition(position) {
+    const fabSize = 44;
+    const maxX = Math.max(0, window.innerWidth - fabSize);
+    const maxY = Math.max(0, window.innerHeight - fabSize);
+    return {
+      x: Math.min(Math.max(0, Math.round(position.x)), maxX),
+      y: Math.min(Math.max(0, Math.round(position.y)), maxY),
+    };
+  }
+
+  function applyFabPosition(fab, position) {
+    const clamped = clampFabPosition(position);
+    fab.style.left = `${clamped.x}px`;
+    fab.style.top = `${clamped.y}px`;
+    fab.style.right = "auto";
+    fab.style.bottom = "auto";
+    return clamped;
+  }
+
+  function makeFloatingTriggerDraggable(fab) {
+    let pointerId = null;
+    let startPointerX = 0;
+    let startPointerY = 0;
+    let startFabX = 0;
+    let startFabY = 0;
+    let dragged = false;
+
+    const onPointerMove = (event) => {
+      if (event.pointerId !== pointerId) return;
+
+      const deltaX = event.clientX - startPointerX;
+      const deltaY = event.clientY - startPointerY;
+      if (!dragged && Math.abs(deltaX) + Math.abs(deltaY) > 4) {
+        dragged = true;
+      }
+      if (!dragged) return;
+
+      event.preventDefault();
+      const nextPosition = {
+        x: startFabX + deltaX,
+        y: startFabY + deltaY,
+      };
+      state.fabPosition = applyFabPosition(fab, nextPosition);
+      saveFabPositionDebounced(state.fabPosition);
+    };
+
+    const onPointerUp = (event) => {
+      if (event.pointerId !== pointerId) return;
+
+      pointerId = null;
+      window.removeEventListener("pointermove", onPointerMove);
+      window.removeEventListener("pointerup", onPointerUp);
+      window.removeEventListener("pointercancel", onPointerUp);
+
+      if (dragged) {
+        fab.dataset.dragged = "true";
+        state.fabPosition = applyFabPosition(fab, state.fabPosition);
+        saveFabPositionDebounced(state.fabPosition);
+        setTimeout(() => {
+          delete fab.dataset.dragged;
+        }, 0);
+      }
+    };
+
+    fab.addEventListener("pointerdown", (event) => {
+      if (event.button !== 0) return;
+      pointerId = event.pointerId;
+      startPointerX = event.clientX;
+      startPointerY = event.clientY;
+      startFabX = state.fabPosition?.x ?? fab.offsetLeft;
+      startFabY = state.fabPosition?.y ?? fab.offsetTop;
+      dragged = false;
+      fab.setPointerCapture(event.pointerId);
+      window.addEventListener("pointermove", onPointerMove, { passive: false });
+      window.addEventListener("pointerup", onPointerUp);
+      window.addEventListener("pointercancel", onPointerUp);
+    });
+  }
 
   function createFloatingTrigger() {
     if (document.getElementById("ytn-fab")) return;
+    const fabIconUrl = chrome.runtime.getURL("icons/icon-32.png");
 
     const fab = document.createElement("button");
     fab.id = "ytn-fab";
     fab.title = "Notes (Ctrl+K)";
     fab.innerHTML = `
-      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z"/>
-      </svg>
+      <img class="ytn-fab-icon" src="${fabIconUrl}" alt="" />
     `;
-    fab.addEventListener("click", () => togglePanel());
+    fab.addEventListener("click", (event) => {
+      if (fab.dataset.dragged === "true") {
+        event.preventDefault();
+        event.stopPropagation();
+        return;
+      }
+      togglePanel();
+    });
     document.body.appendChild(fab);
+
+    const savedPosition = state.fabPosition || getDefaultFabPosition();
+    state.fabPosition = applyFabPosition(fab, savedPosition);
+    lastFabViewport = { width: window.innerWidth, height: window.innerHeight };
+    makeFloatingTriggerDraggable(fab);
   }
+
+  const handleFabViewportResize = debounce(() => {
+    const fab = document.getElementById("ytn-fab");
+    if (!fab) return;
+    const currentViewport = {
+      width: window.innerWidth,
+      height: window.innerHeight,
+    };
+    const previousViewport =
+      lastFabViewport || currentViewport;
+    const basePosition = state.fabPosition || getDefaultFabPosition();
+    const deltaWidth = currentViewport.width - previousViewport.width;
+    const deltaHeight = currentViewport.height - previousViewport.height;
+    const shouldAnchorRight = basePosition.x > previousViewport.width / 2;
+    const shouldAnchorBottom = basePosition.y > previousViewport.height / 2;
+    const nextPosition = {
+      x: basePosition.x + (shouldAnchorRight ? deltaWidth : 0),
+      y: basePosition.y + (shouldAnchorBottom ? deltaHeight : 0),
+    };
+    state.fabPosition = applyFabPosition(fab, nextPosition);
+    lastFabViewport = currentViewport;
+    saveFabPositionDebounced(state.fabPosition);
+  }, 150);
 
   // ==================== UI CREATION ====================
 
@@ -665,6 +813,8 @@ ${detailedCoverageInstruction}`;
     }
 
     detectDarkMode();
+    const panelIconUrl = chrome.runtime.getURL("icons/icon-32.png");
+    const emptyIconUrl = chrome.runtime.getURL("icons/icon-48.png");
 
     const panel = document.createElement("div");
     panel.id = CONFIG.PANEL_ID;
@@ -740,24 +890,30 @@ ${detailedCoverageInstruction}`;
           height: 44px;
           padding: 0;
           border-radius: 50%;
-          background: #ff0000;
+          background: #282828;
           color: #fff;
-          border: none;
+          border: 1px solid #fff;
           cursor: pointer;
           display: flex;
           align-items: center;
           justify-content: center;
           box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
           transition: background 0.2s, transform 0.15s;
+          touch-action: none;
+          user-select: none;
         }
 
         #ytn-fab:hover {
-          background: #cc0000;
           transform: scale(1.08);
         }
 
-        #ytn-fab svg {
-          stroke: currentColor;
+        .ytn-fab-icon {
+          width: 32px;
+          height: 32px;
+          display: block;
+          border-radius: 100%;
+          pointer-events: none;
+          user-select: none;
         }
 
         /* ==================== PANEL BASE ==================== */
@@ -809,7 +965,8 @@ ${detailedCoverageInstruction}`;
         .ytn-icon-notes {
           width: 20px;
           height: 20px;
-          fill: var(--ytn-accent);
+          display: block;
+          border-radius: 4px;
         }
 
         .ytn-video-title {
@@ -887,6 +1044,7 @@ ${detailedCoverageInstruction}`;
           height: 64px;
           margin: 0 auto var(--space-4);
           opacity: 0.3;
+          border-radius: 10px;
         }
 
         .ytn-empty-title {
@@ -1446,9 +1604,7 @@ ${detailedCoverageInstruction}`;
       <div class="ytn-panel-header">
         <div>
           <div class="ytn-panel-title">
-            <svg class="ytn-icon-notes" viewBox="0 0 24 24">
-              <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z"/>
-            </svg>
+            <img class="ytn-icon-notes" src="${panelIconUrl}" alt="" />
             Notes
           </div>
           <div class="ytn-video-title" title="${
@@ -1467,9 +1623,7 @@ ${detailedCoverageInstruction}`;
       <div class="ytn-panel-body">
         <div id="ytn-content-area">
           <div class="ytn-empty-state">
-            <svg class="ytn-empty-icon" viewBox="0 0 24 24" fill="currentColor" opacity="0.3">
-              <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z"/>
-            </svg>
+            <img class="ytn-empty-icon" src="${emptyIconUrl}" alt="" />
             <div class="ytn-empty-title">Generate MECE Notes</div>
           <div class="ytn-empty-description">
             Professional McKinsey-style summaries in seconds
@@ -2295,6 +2449,7 @@ ${detailedCoverageInstruction}`;
 
     // Load panel state
     await loadPanelState();
+    await loadFabPosition();
 
     // Create panel
     createPanel();
@@ -2330,6 +2485,7 @@ ${detailedCoverageInstruction}`;
     initNavigationHandlers.initialized = true;
     window.addEventListener("yt-navigate-finish", handleNavigation);
     window.addEventListener("popstate", handleNavigation);
+    window.addEventListener("resize", handleFabViewportResize);
   }
 
   // Start initialization

@@ -22,7 +22,13 @@
   ],
   "web_accessible_resources": [
     {
-      "resources": ["notes-library.html"],
+      "resources": [
+        "notes-library.html",
+        "icons/icon-16.png",
+        "icons/icon-32.png",
+        "icons/icon-48.png",
+        "icons/icon-128.png"
+      ],
       "matches": ["https://www.youtube.com/*", "https://youtube.com/*"]
     }
   ]
