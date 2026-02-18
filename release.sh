@@ -1,9 +1,9 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # YouTube Video Notes Extension - Build Script
 # Creates a distributable package for Chrome Web Store
 
-set -e
+set -euo pipefail
 
 # Colors for output
 RED='\033[0;31m'
@@ -13,8 +13,18 @@ NC='\033[0m' # No Color
 
 echo -e "${GREEN}Building YouTube Video Notes Extension${NC}"
 
+# Verify required tools
+command -v zip >/dev/null 2>&1 || {
+  echo -e "${RED}Error: 'zip' is required but not installed.${NC}"
+  exit 1
+}
+command -v node >/dev/null 2>&1 || {
+  echo -e "${RED}Error: 'node' is required but not installed.${NC}"
+  exit 1
+}
+
 # Get version from manifest.json
-VERSION=$(grep '"version"' manifest.json | head -1 | awk -F'"' '{print $4}')
+VERSION=$(node -e "const m=require('./manifest.json'); process.stdout.write(m.version)")
 echo -e "${YELLOW}Version: $VERSION${NC}"
 
 # Create dist directory
@@ -30,6 +40,8 @@ cp notes-library.js dist/
 cp jszip.min.js dist/
 cp -r icons dist/
 cp README.md dist/ 2>/dev/null || echo "README.md not found, skipping..."
+cp PRIVACY.md dist/ 2>/dev/null || echo "PRIVACY.md not found, skipping..."
+cp LICENSE dist/ 2>/dev/null || echo "LICENSE not found, skipping..."
 
 # Create zip file
 ZIP_NAME="youtube-video-notes-v${VERSION}.zip"
