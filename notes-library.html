@@ -907,6 +907,215 @@
       margin-top: 20px;
     }
 
+    /* ---- Manage Keys button in header ---- */
+    .manage-keys-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 14px;
+      background: #f1f1f1;
+      border: none;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 500;
+      color: #0f0f0f;
+      cursor: pointer;
+      transition: background 0.2s;
+      margin-right: 8px;
+    }
+    .manage-keys-btn:hover { background: #e5e5e5; }
+    .dark-mode .manage-keys-btn { background: #272727; color: #f1f1f1; }
+    .dark-mode .manage-keys-btn:hover { background: #3f3f3f; }
+
+    /* ---- Settings modal ---- */
+    .settings-modal-content {
+      max-width: 660px;
+      width: 100%;
+    }
+
+    .settings-body {
+      padding: 0 0 4px;
+    }
+
+    .settings-subtitle {
+      font-size: 13px;
+      color: #606060;
+      margin: 0 0 20px;
+      line-height: 1.5;
+    }
+    .dark-mode .settings-subtitle { color: #aaaaaa; }
+
+    /* ---- Model cards grid ---- */
+    .model-cards-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+
+    .model-card {
+      border: 2px solid #e5e5e5;
+      border-radius: 10px;
+      padding: 14px;
+      cursor: pointer;
+      transition: border-color 0.15s, background 0.15s;
+      position: relative;
+    }
+    .model-card:hover { border-color: #909090; }
+    .model-card.selected {
+      border-color: #ff0000;
+      background: #fff5f5;
+    }
+    .dark-mode .model-card { border-color: #303030; }
+    .dark-mode .model-card:hover { border-color: #717171; }
+    .dark-mode .model-card.selected { border-color: #ff0000; background: #2a1a1a; }
+
+    .model-card-header {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 8px;
+    }
+
+    .provider-badge {
+      font-size: 11px;
+      font-weight: 600;
+      padding: 2px 7px;
+      border-radius: 10px;
+      letter-spacing: 0.3px;
+    }
+    .provider-openai  { background: #d4edda; color: #155724; }
+    .provider-anthropic { background: #d0e8ff; color: #003f7a; }
+    .provider-zai { background: #ede8ff; color: #3a0070; }
+    .dark-mode .provider-openai  { background: #1a3a22; color: #7eca8e; }
+    .dark-mode .provider-anthropic { background: #0a2040; color: #7ab8f5; }
+    .dark-mode .provider-zai { background: #1e1040; color: #b89eff; }
+
+    .model-recommended-badge {
+      font-size: 10px;
+      font-weight: 600;
+      padding: 2px 6px;
+      border-radius: 8px;
+      background: #e6f4ea;
+      color: #1e7e34;
+      letter-spacing: 0.3px;
+    }
+    .dark-mode .model-recommended-badge { background: #0e2e14; color: #5cbf6b; }
+
+    .model-name {
+      font-size: 15px;
+      font-weight: 600;
+      color: #0f0f0f;
+      margin-bottom: 6px;
+    }
+    .dark-mode .model-name { color: #f1f1f1; }
+
+    .model-pricing {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 6px;
+      flex-wrap: wrap;
+    }
+    .pricing-tokens {
+      font-size: 12px;
+      color: #606060;
+    }
+    .dark-mode .pricing-tokens { color: #aaaaaa; }
+
+    .cost-per-video {
+      font-size: 11px;
+      font-weight: 600;
+      padding: 1px 7px;
+      border-radius: 8px;
+      background: #f1f1f1;
+      color: #0f0f0f;
+    }
+    .dark-mode .cost-per-video { background: #303030; color: #f1f1f1; }
+
+    .model-note {
+      font-size: 12px;
+      color: #606060;
+      line-height: 1.4;
+      margin-bottom: 8px;
+    }
+    .dark-mode .model-note { color: #aaaaaa; }
+
+    .model-selected-check {
+      display: none;
+      align-items: center;
+      gap: 4px;
+      font-size: 12px;
+      font-weight: 600;
+      color: #cc0000;
+    }
+    .model-card.selected .model-selected-check { display: flex; }
+    .dark-mode .model-selected-check { color: #ff6666; }
+
+    /* ---- API key section ---- */
+    .api-key-section {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-bottom: 24px;
+    }
+
+    .api-key-label {
+      font-size: 13px;
+      font-weight: 600;
+      color: #0f0f0f;
+    }
+    .dark-mode .api-key-label { color: #f1f1f1; }
+
+    .api-key-input-row {
+      display: flex;
+      gap: 6px;
+    }
+
+    .api-key-input {
+      flex: 1;
+      padding: 9px 12px;
+      border: 1px solid #e5e5e5;
+      border-radius: 6px;
+      font-size: 14px;
+      font-family: monospace;
+      background: #f9f9f9;
+      color: #0f0f0f;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    .api-key-input:focus { border-color: #909090; }
+    .api-key-input:disabled { opacity: 0.5; cursor: not-allowed; }
+    .dark-mode .api-key-input { background: #1f1f1f; border-color: #303030; color: #f1f1f1; }
+    .dark-mode .api-key-input:focus { border-color: #717171; }
+
+    .api-key-toggle {
+      padding: 9px 11px;
+      background: #f1f1f1;
+      border: 1px solid #e5e5e5;
+      border-radius: 6px;
+      cursor: pointer;
+      color: #606060;
+      transition: background 0.15s;
+    }
+    .api-key-toggle:hover { background: #e5e5e5; }
+    .dark-mode .api-key-toggle { background: #272727; border-color: #303030; color: #aaaaaa; }
+    .dark-mode .api-key-toggle:hover { background: #3f3f3f; }
+
+    .api-key-link {
+      font-size: 12px;
+      color: #0066cc;
+      text-decoration: none;
+    }
+    .api-key-link:hover { text-decoration: underline; }
+    .dark-mode .api-key-link { color: #4dabff; }
+
+    .settings-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+    }
+
     @media (max-width: 768px) {
       .container {
         padding: 20px 16px;
@@ -933,6 +1142,14 @@
         flex-direction: column;
         gap: 12px;
       }
+
+      .model-cards-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .settings-modal-content {
+        margin: 16px;
+      }
     }
   </style>
 </head>
@@ -946,6 +1163,12 @@
         </h1>
         <p class="subtitle">All your video notes in one place</p>
       </div>
+      <button class="manage-keys-btn" id="settings-btn" title="Manage AI Keys">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+          <path d="M12.65 10C11.83 7.67 9.61 6 7 6c-3.31 0-6 2.69-6 6s2.69 6 6 6c2.61 0 4.83-1.67 5.65-4H17v4h4v-4h2v-4H12.65zM7 14c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2z"/>
+        </svg>
+        Manage Keys
+      </button>
       <button class="dark-mode-toggle" id="darkModeToggle" title="Toggle dark mode">
         <svg viewBox="0 0 24 24" id="darkModeIcon">
           <path d="M12,18C11.11,18 10.26,17.8 9.5,17.45C11.56,16.5 13,14.42 13,12C13,9.58 11.56,7.5 9.5,6.55C10.26,6.2 11.11,6 12,6A6,6 0 0,1 18,12A6,6 0 0,1 12,18M20,8.69V4H15.31L12,0.69L8.69,4H4V8.69L0.69,12L4,15.31V20H8.69L12,23.31L15.31,20H20V15.31L23.31,12L20,8.69Z"/>
@@ -1061,6 +1284,120 @@
       <div class="confirm-actions">
         <button class="btn btn-secondary" id="delete-cancel-btn">Cancel</button>
         <button class="btn btn-danger" id="delete-confirm-btn">Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Settings Modal -->
+  <div class="modal" id="settings-modal">
+    <div class="modal-content settings-modal-content">
+      <div class="modal-header">
+        <h2 class="modal-title">AI Model Settings</h2>
+        <button class="modal-close" id="settings-close-btn" aria-label="Close">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+            <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+          </svg>
+        </button>
+      </div>
+      <div class="settings-body">
+        <p class="settings-subtitle">Choose your AI model. Each card shows live market pricing and estimated cost per video (~10k input + 1k output tokens).</p>
+        <div class="model-cards-grid">
+
+          <!-- GPT-5 Mini -->
+          <div class="model-card" data-provider="openai" data-model="gpt-5-mini">
+            <div class="model-card-header">
+              <span class="provider-badge provider-openai">OpenAI</span>
+              <span class="model-recommended-badge">Recommended</span>
+            </div>
+            <div class="model-name">GPT-5 Mini</div>
+            <div class="model-pricing">
+              <span class="pricing-tokens">$0.25 / $2.00 per MTok</span>
+              <span class="cost-per-video">~$0.005/video</span>
+            </div>
+            <div class="model-note">Sweet spot — GPT-5 family quality at 5× lower cost.</div>
+            <div class="model-selected-check">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+              Selected
+            </div>
+          </div>
+
+          <!-- GPT-5 -->
+          <div class="model-card" data-provider="openai" data-model="gpt-5">
+            <div class="model-card-header">
+              <span class="provider-badge provider-openai">OpenAI</span>
+            </div>
+            <div class="model-name">GPT-5</div>
+            <div class="model-pricing">
+              <span class="pricing-tokens">$1.25 / $10.00 per MTok</span>
+              <span class="cost-per-video">~$0.022/video</span>
+            </div>
+            <div class="model-note">Best quality in the GPT-5 family for complex or dense content.</div>
+            <div class="model-selected-check">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+              Selected
+            </div>
+          </div>
+
+          <!-- Claude Haiku 4.5 -->
+          <div class="model-card" data-provider="anthropic" data-model="claude-haiku-4-5-20251001">
+            <div class="model-card-header">
+              <span class="provider-badge provider-anthropic">Anthropic</span>
+            </div>
+            <div class="model-name">Claude Haiku 4.5</div>
+            <div class="model-pricing">
+              <span class="pricing-tokens">$1.00 / $5.00 per MTok</span>
+              <span class="cost-per-video">~$0.015/video</span>
+            </div>
+            <div class="model-note">Best at following structured formatting rules. Great for MECE notes.</div>
+            <div class="model-selected-check">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+              Selected
+            </div>
+          </div>
+
+          <!-- GLM-5 -->
+          <div class="model-card" data-provider="zai" data-model="glm-5">
+            <div class="model-card-header">
+              <span class="provider-badge provider-zai">z.ai</span>
+            </div>
+            <div class="model-name">GLM-5</div>
+            <div class="model-pricing">
+              <span class="pricing-tokens">$0.72 / $2.30 per MTok</span>
+              <span class="cost-per-video">~$0.009/video</span>
+            </div>
+            <div class="model-note">745B open-source model, Opus-class quality at the lowest price.</div>
+            <div class="model-selected-check">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+              Selected
+            </div>
+          </div>
+
+        </div>
+
+        <div class="api-key-section">
+          <label class="api-key-label" id="api-key-label" for="api-key-input">API Key</label>
+          <div class="api-key-input-row">
+            <input
+              type="password"
+              id="api-key-input"
+              class="api-key-input"
+              placeholder="Select a model above..."
+              autocomplete="off"
+              disabled
+            />
+            <button class="api-key-toggle" id="api-key-toggle-btn" title="Show/hide key" style="display:none;">
+              <svg id="eye-icon" viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+                <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>
+              </svg>
+            </button>
+          </div>
+          <a class="api-key-link" id="api-key-link" href="#" target="_blank" rel="noopener">Get API key →</a>
+        </div>
+
+        <div class="settings-actions">
+          <button class="btn btn-primary" id="settings-save-btn">Save Settings</button>
+          <button class="btn btn-secondary" id="settings-cancel-btn">Cancel</button>
+        </div>
       </div>
     </div>
   </div>

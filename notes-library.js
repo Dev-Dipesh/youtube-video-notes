@@ -1119,5 +1119,183 @@ style.textContent = `
 `;
 document.head.appendChild(style);
 
+// ==================== SETTINGS MODAL ====================
+
+const PROVIDER_META = {
+  openai: {
+    keyLabel: 'OpenAI API Key',
+    keyPlaceholder: 'sk-...',
+    keyLink: 'https://platform.openai.com/api-keys',
+    keyLinkText: 'Get OpenAI API key →',
+  },
+  anthropic: {
+    keyLabel: 'Anthropic API Key',
+    keyPlaceholder: 'sk-ant-...',
+    keyLink: 'https://console.anthropic.com/settings/keys',
+    keyLinkText: 'Get Anthropic API key →',
+  },
+  zai: {
+    keyLabel: 'z.ai API Key',
+    keyPlaceholder: 'Enter your z.ai key...',
+    keyLink: 'https://docs.z.ai/',
+    keyLinkText: 'Get z.ai API key →',
+  },
+};
+
+let settingsSelectedProvider = null;
+let settingsSelectedModel = null;
+let providerKeys = { openai: '', anthropic: '', zai: '' };
+
+function loadProviderSettings(callback) {
+  chrome.storage.local.get(
+    ['selected_provider', 'selected_model', 'openai_api_key', 'anthropic_api_key', 'zai_api_key'],
+    (result) => {
+      settingsSelectedProvider = result.selected_provider || null;
+      settingsSelectedModel = result.selected_model || null;
+      providerKeys.openai = result.openai_api_key || '';
+      providerKeys.anthropic = result.anthropic_api_key || '';
+      providerKeys.zai = result.zai_api_key || '';
+      if (callback) callback();
+    }
+  );
+}
+
+function updateApiKeySection(provider) {
+  const meta = PROVIDER_META[provider];
+  const apiKeyLabel = document.getElementById('api-key-label');
+  const apiKeyInput = document.getElementById('api-key-input');
+  const apiKeyLink = document.getElementById('api-key-link');
+  const apiKeyToggle = document.getElementById('api-key-toggle-btn');
+
+  if (!meta || !apiKeyInput) return;
+
+  if (apiKeyLabel) apiKeyLabel.textContent = meta.keyLabel;
+  if (apiKeyInput) {
+    apiKeyInput.placeholder = meta.keyPlaceholder;
+    apiKeyInput.value = providerKeys[provider] || '';
+    apiKeyInput.type = 'password';
+    apiKeyInput.disabled = false;
+  }
+  if (apiKeyLink) {
+    apiKeyLink.href = meta.keyLink;
+    apiKeyLink.textContent = meta.keyLinkText;
+  }
+  if (apiKeyToggle) apiKeyToggle.style.display = 'inline-flex';
+}
+
+function openSettingsModal() {
+  const settingsModal = document.getElementById('settings-modal');
+  if (!settingsModal) return;
+
+  // Mark the active card
+  document.querySelectorAll('.model-card').forEach(card => {
+    const isActive =
+      card.dataset.provider === settingsSelectedProvider &&
+      card.dataset.model === settingsSelectedModel;
+    card.classList.toggle('selected', isActive);
+  });
+
+  // Populate API key section for current provider (or first card if none set)
+  const activeProvider = settingsSelectedProvider || 'openai';
+  updateApiKeySection(activeProvider);
+
+  settingsModal.classList.add('active');
+}
+
+function closeSettingsModal() {
+  const settingsModal = document.getElementById('settings-modal');
+  if (settingsModal) settingsModal.classList.remove('active');
+}
+
+function saveSettings() {
+  const apiKeyInput = document.getElementById('api-key-input');
+  if (!settingsSelectedProvider || !settingsSelectedModel) {
+    showToast('Please select a model first.', 'warning');
+    return;
+  }
+  const keyValue = apiKeyInput ? apiKeyInput.value.trim() : '';
+  if (!keyValue) {
+    showToast('Please enter an API key.', 'warning');
+    return;
+  }
+
+  const storageKeyName = settingsSelectedProvider === 'openai' ? 'openai_api_key'
+    : settingsSelectedProvider === 'anthropic' ? 'anthropic_api_key'
+    : 'zai_api_key';
+
+  providerKeys[settingsSelectedProvider] = keyValue;
+
+  chrome.storage.local.set({
+    selected_provider: settingsSelectedProvider,
+    selected_model: settingsSelectedModel,
+    [storageKeyName]: keyValue,
+  }, () => {
+    showToast('Settings saved successfully!', 'success');
+    closeSettingsModal();
+  });
+}
+
+// Wire up settings button
+const settingsBtn = document.getElementById('settings-btn');
+if (settingsBtn) {
+  settingsBtn.addEventListener('click', () => {
+    loadProviderSettings(openSettingsModal);
+  });
+}
+
+// Wire up close/cancel
+const settingsCloseBtn = document.getElementById('settings-close-btn');
+if (settingsCloseBtn) settingsCloseBtn.addEventListener('click', closeSettingsModal);
+
+const settingsCancelBtn = document.getElementById('settings-cancel-btn');
+if (settingsCancelBtn) settingsCancelBtn.addEventListener('click', closeSettingsModal);
+
+// Wire up save
+const settingsSaveBtn = document.getElementById('settings-save-btn');
+if (settingsSaveBtn) settingsSaveBtn.addEventListener('click', saveSettings);
+
+// Wire up model card clicks
+document.querySelectorAll('.model-card').forEach(card => {
+  card.addEventListener('click', () => {
+    document.querySelectorAll('.model-card').forEach(c => c.classList.remove('selected'));
+    card.classList.add('selected');
+    settingsSelectedProvider = card.dataset.provider;
+    settingsSelectedModel = card.dataset.model;
+    // Save current input value for previous provider before switching
+    const apiKeyInput = document.getElementById('api-key-input');
+    updateApiKeySection(settingsSelectedProvider);
+  });
+});
+
+// API key show/hide toggle
+const apiKeyToggleBtn = document.getElementById('api-key-toggle-btn');
+if (apiKeyToggleBtn) {
+  apiKeyToggleBtn.addEventListener('click', () => {
+    const apiKeyInput = document.getElementById('api-key-input');
+    const eyeIcon = document.getElementById('eye-icon');
+    if (!apiKeyInput) return;
+    const isPassword = apiKeyInput.type === 'password';
+    apiKeyInput.type = isPassword ? 'text' : 'password';
+    if (eyeIcon) {
+      eyeIcon.innerHTML = isPassword
+        ? '<path d="M12 7c2.76 0 5 2.24 5 5 0 .65-.13 1.26-.36 1.83l2.92 2.92c1.51-1.26 2.7-2.89 3.43-4.75-1.73-4.39-6-7.5-11-7.5-1.4 0-2.74.25-3.98.7l2.16 2.16C10.74 7.13 11.35 7 12 7zM2 4.27l2.28 2.28.46.46C3.08 8.3 1.78 10.02 1 12c1.73 4.39 6 7.5 11 7.5 1.55 0 3.03-.3 4.38-.84l.42.42L19.73 22 21 20.73 3.27 3 2 4.27zM7.53 9.8l1.55 1.55c-.05.21-.08.43-.08.65 0 1.66 1.34 3 3 3 .22 0 .44-.03.65-.08l1.55 1.55c-.67.33-1.41.53-2.2.53-2.76 0-5-2.24-5-5 0-.79.2-1.53.53-2.2zm4.31-.78l3.15 3.15.02-.16c0-1.66-1.34-3-3-3l-.17.01z"/>'
+        : '<path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>';
+    }
+  });
+}
+
+// Close settings modal on backdrop click
+const settingsModalEl = document.getElementById('settings-modal');
+if (settingsModalEl) {
+  settingsModalEl.addEventListener('click', (e) => {
+    if (e.target === settingsModalEl) closeSettingsModal();
+  });
+}
+
+// Auto-open settings if URL has #settings hash
+if (window.location.hash === '#settings') {
+  loadProviderSettings(openSettingsModal);
+}
+
 // Initialize
 loadNotes();
