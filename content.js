@@ -750,6 +750,68 @@ ${detailedCoverageInstruction}`;
     });
   }
 
+  function populateModelSwitcher() {
+    const select = panelElements.modelSelect;
+    if (!select) return;
+
+    chrome.storage.local.get(
+      [
+        CONFIG.STORAGE_KEYS.SELECTED_PROVIDER,
+        CONFIG.STORAGE_KEYS.SELECTED_MODEL,
+        CONFIG.STORAGE_KEYS.OPENAI_KEY,
+        CONFIG.STORAGE_KEYS.ANTHROPIC_KEY,
+        CONFIG.STORAGE_KEYS.ZAI_KEY,
+      ],
+      (result) => {
+        const activeProvider = result[CONFIG.STORAGE_KEYS.SELECTED_PROVIDER];
+        const activeModel = result[CONFIG.STORAGE_KEYS.SELECTED_MODEL];
+
+        // Collect all models that have a saved key
+        const configured = [];
+        for (const [providerKey, provider] of Object.entries(PROVIDERS)) {
+          if (!result[provider.storageKey]) continue;
+          for (const [modelId, model] of Object.entries(provider.models)) {
+            configured.push({ providerKey, modelId, label: model.label });
+          }
+        }
+
+        // Hide if 0 or 1 models configured — no point switching
+        if (configured.length <= 1) {
+          select.style.display = "none";
+          return;
+        }
+
+        select.innerHTML = configured
+          .map(
+            ({ providerKey, modelId, label }) =>
+              `<option value="${providerKey}::${modelId}" ${
+                providerKey === activeProvider && modelId === activeModel
+                  ? "selected"
+                  : ""
+              }>${label}</option>`,
+          )
+          .join("");
+
+        select.style.display = "";
+
+        select.addEventListener("change", (e) => {
+          const [providerKey, modelId] = e.target.value.split("::");
+          chrome.storage.local.set({
+            [CONFIG.STORAGE_KEYS.SELECTED_PROVIDER]: providerKey,
+            [CONFIG.STORAGE_KEYS.SELECTED_MODEL]: modelId,
+          });
+          state.selectedProvider = providerKey;
+          state.selectedModel = modelId;
+          showToast(
+            `Switched to ${PROVIDERS[providerKey].models[modelId].label}`,
+            "success",
+            2000,
+          );
+        });
+      },
+    );
+  }
+
   async function loadNotes(videoId) {
     return new Promise((resolve) => {
       chrome.storage.local.get([CONFIG.STORAGE_KEYS.NOTES], (result) => {
@@ -1821,6 +1883,7 @@ ${detailedCoverageInstruction}`;
             </label>
           </div>
           <div class="ytn-settings-right">
+            <select id="ytn-model-select" class="ytn-btn ytn-btn-secondary ytn-btn-select" aria-label="AI model" style="display: none;"></select>
             <select id="ytn-depth-select" class="ytn-btn ytn-btn-secondary ytn-btn-select" aria-label="Report depth">
               <option value="brief">Brief</option>
               <option value="detailed">Detailed</option>
@@ -1893,6 +1956,7 @@ ${detailedCoverageInstruction}`;
       minimizeBtn: panel.querySelector(".ytn-minimize-btn"),
       viewAllBtn: document.getElementById("ytn-view-all-btn"),
       depthSelect: document.getElementById("ytn-depth-select"),
+      modelSelect: document.getElementById("ytn-model-select"),
       chaptersSetting: document.getElementById("ytn-chapters-setting"),
       chaptersToggle: document.getElementById("ytn-chapters-toggle"),
       languageToggle: document.getElementById("ytn-language-toggle"),
@@ -1929,6 +1993,9 @@ ${detailedCoverageInstruction}`;
     panelElements.depthSelect.value = state.activeDepth;
     panelElements.chaptersToggle.checked = state.includeChapters;
     panelElements.languageToggle.checked = state.matchTranscriptLanguage;
+
+    // Populate model switcher with only configured (key-saved) models
+    populateModelSwitcher();
     panelElements.chaptersSetting.style.display = state.hasChapters
       ? "inline-flex"
       : "none";
