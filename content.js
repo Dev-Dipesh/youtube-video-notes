@@ -118,7 +118,7 @@
     dragOffset: { x: 0, y: 0 },
     activeDepth: "brief",
     includeChapters: false,
-    matchTranscriptLanguage: false,
+    matchTranscriptLanguage: true,
     videoDuration: null,
     transcriptQuality: 0.9,
     hasChapters: false,
