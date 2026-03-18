@@ -543,6 +543,7 @@
           { role: "user", content: userPrompt },
         ],
         max_tokens: maxTokens,
+        thinking: { type: "disabled" },
       }),
     });
     if (!response.ok) {
